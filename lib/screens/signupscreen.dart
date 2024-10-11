@@ -1,49 +1,86 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_workbench_app/screens/loginscreen.dart';
 
-class SignUpScreen extends StatelessWidget {
+class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
 
-  Future<void> signUpUser(BuildContext context, String fullName, String email, String password) async {
+  @override
+  _SignUpScreenState createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  Future<void> signUpUser(BuildContext context, String name, String email, String password) async {
     try {
+      print('Attempting to sign up user...');
       final response = await http.post(
-        Uri.parse('http://192.168.0.4:8000/auth/signup'),
+        Uri.parse('http://192.168.0.8:8000/auth/signup'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
         body: jsonEncode(<String, String>{
-          'fullname': fullName,
+          'name': name,
           'email': email,
           'password': password,
         }),
       );
-      print(response.body);
-      if (response.statusCode == 201) {
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      if (response.statusCode == 201) {  // Changed from 200 to 201
         var data = jsonDecode(response.body);
         print('Sign-up successful: $data');
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const LoginScreen(),
-          ),
+
+        // Save user data in SharedPreferences
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('name', name);
+        await prefs.setString('email', email);
+        if (data.containsKey('token')) {
+          await prefs.setString('token', data['token']);
+        }
+
+        print('User data saved to SharedPreferences');
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sign up successful! Redirecting to login...')),
         );
+
+        print('Attempting to navigate to LoginScreen...');
+        // Use Future.delayed to ensure the navigation happens after the current build cycle
+        Future.delayed(Duration(seconds: 1), () {
+          print('Executing delayed navigation...');
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => LoginScreen()),
+          );
+        });
       } else {
-        throw Exception('Failed to sign up');
+        print('Sign-up failed with status code: ${response.statusCode}');
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to sign up. Please try again.')),
+        );
       }
     } catch (error) {
-      print('ERROR $error');
+      print('ERROR during sign-up: $error');
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An error occurred. Please try again later.')),
+      );
     }
   }
 
+// ... rest of the code remains the same ...
+
+
   @override
   Widget build(BuildContext context) {
-    TextEditingController nameController = TextEditingController();
-    TextEditingController emailController = TextEditingController();
-    TextEditingController passwordController = TextEditingController();
-
     return Scaffold(
       body: Stack(
         children: [
@@ -91,7 +128,15 @@ class SignUpScreen extends StatelessWidget {
                               const SizedBox(height: 30),
                               ElevatedButton(
                                 onPressed: () {
-                                  signUpUser(context, nameController.text, emailController.text, passwordController.text);
+                                  if (nameController.text.isNotEmpty &&
+                                      emailController.text.isNotEmpty &&
+                                      passwordController.text.isNotEmpty) {
+                                    signUpUser(context, nameController.text, emailController.text, passwordController.text);
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Please fill in all fields')),
+                                    );
+                                  }
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.brown,
@@ -115,10 +160,11 @@ class SignUpScreen extends StatelessWidget {
                                   ),
                                   TextButton(
                                     onPressed: () {
-                                      Navigator.push(
+                                      print('Log in button pressed');
+                                      Navigator.pushReplacement(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => const LoginScreen(),
+                                          builder: (context) => LoginScreen(),
                                         ),
                                       );
                                     },

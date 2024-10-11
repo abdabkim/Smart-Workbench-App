@@ -1,12 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:smart_workbench_app/screens/welcomescreen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:smart_workbench_app/screens/homescreen.dart';
 
-void main() {
-  runApp(const SmartWorkBenchApp());
+
+Future<void> main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String token = prefs.getString('token') ?? '';
+  Widget startscreen = (token == "") ? WelcomeScreen() : HomeScreen();
+  runApp(SmartWorkBenchApp(startscreen: startscreen,));
 }
 
 class SmartWorkBenchApp extends StatelessWidget {
-  const SmartWorkBenchApp({Key? key}) : super(key: key);
+  Widget startscreen;
+  SmartWorkBenchApp({Key? key, required this.startscreen}) : super(key: key);
+
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +26,7 @@ class SmartWorkBenchApp extends StatelessWidget {
         primarySwatch: Colors.brown,
       ),
       // Start with WelcomeScreen first
-      home: WelcomeScreen(),
+      home: this.startscreen,
     );
   }
 }
@@ -26,8 +35,6 @@ class SmartWorkBenchApp extends StatelessWidget {
 
 
 
-
-// Make sure this is at the top
 
 
 

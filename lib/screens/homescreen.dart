@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:smart_workbench_app/screens/adddevicesscreen.dart';
 import 'package:smart_workbench_app/screens/automationscreen.dart';
 import 'package:smart_workbench_app/screens/controlpanelscreen.dart';
@@ -6,16 +7,12 @@ import 'package:smart_workbench_app/screens/dashboardscreen.dart';
 import 'package:smart_workbench_app/screens/loginscreen.dart';
 import 'package:smart_workbench_app/screens/monitoringscreen.dart';
 import 'package:smart_workbench_app/screens/settingsscreen.dart';
+import 'dart:convert';
+
 import 'package:smart_workbench_app/screens/signupscreen.dart';
-//import 'dashboardscreen.dart';
-//import 'controlpanelscreen.dart';
-//import 'monitoringscreen.dart';
-//import 'automationscreen.dart';
-//import 'settingsscreen.dart';
-//import 'loginscreen.dart';
-//import 'signupscreen.dart';
 
 class HomeScreen extends StatefulWidget {
+
   const HomeScreen({Key? key}) : super(key: key);
 
   @override
@@ -44,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('Smart WorkBench'),
+        title: Text('Hello'), // Display welcome message
         actions: [
           if (_selectedIndex == 0) // Only show on Dashboard
             IconButton(
@@ -170,5 +167,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-
-

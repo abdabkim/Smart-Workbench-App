@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_workbench_app/screens/signupscreen.dart';
-import 'package:smart_workbench_app/screens/homescreen.dart'; // Add this import
+import 'package:smart_workbench_app/screens/homescreen.dart';
+import 'package:http/http.dart' as http;
 
 class WaveClipper extends CustomClipper<Path> {
   @override
@@ -39,10 +42,59 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
-  void navigateToHomeScreen() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => HomeScreen()),
-    );
+  Future<void> navigateToHomeScreen(String email, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('http://192.168.0.8:8000/auth/login'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, String>{
+          'email': email,
+          'password': password,
+        }),
+      );
+
+      print('Response Status: ${response.statusCode}');
+      print('Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic> data = jsonDecode(response.body);
+        print('Login successful: $data');
+
+        // Extract the user's name from the response, use email as fallback
+        String userName = email.split('@')[0];
+        String welcomeMessage = 'Welcome, $userName';
+
+        // Save login data to SharedPreferences
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('email', email);
+        String? token = data['id'] as String?;
+        if (token != null) {
+          await prefs.setString('token', token);
+        }
+
+        // Navigate to HomeScreen
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => HomeScreen(),
+          ),
+        );
+      } else {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login failed. Please try again.')),
+        );
+      }
+    } catch (error) {
+      print('ERROR $error');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An error occurred. Please try again later.')),
+      );
+    }
   }
 
   @override
@@ -123,7 +175,15 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               SizedBox(height: MediaQuery.of(context).size.height * 0.05),
                               ElevatedButton(
-                                onPressed: navigateToHomeScreen, // Updated to use the new navigation function
+                                onPressed: () {
+                                  if (emailController.text.isNotEmpty && passwordController.text.isNotEmpty) {
+                                    navigateToHomeScreen(emailController.text, passwordController.text);
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Please enter both email and password')),
+                                    );
+                                  }
+                                },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.brown,
                                   shape: const RoundedRectangleBorder(
