@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:smart_workbench_app/providers/user_provider.dart';
 import 'package:smart_workbench_app/screens/welcomescreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_workbench_app/screens/homescreen.dart';
@@ -9,7 +11,13 @@ Future<void> main() async{
   SharedPreferences prefs = await SharedPreferences.getInstance();
   String token = prefs.getString('token') ?? '';
   Widget startscreen = (token == "") ? WelcomeScreen() : HomeScreen();
-  runApp(SmartWorkBenchApp(startscreen: startscreen,));
+  runApp(
+      MultiProvider(
+        providers: [ChangeNotifierProvider(create: (context)=>User())],
+          child: SmartWorkBenchApp(startscreen: startscreen,
+          )
+      )
+  );
 }
 
 class SmartWorkBenchApp extends StatelessWidget {

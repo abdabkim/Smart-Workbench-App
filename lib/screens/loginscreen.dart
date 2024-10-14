@@ -55,11 +55,8 @@ class _LoginScreenState extends State<LoginScreen> {
         }),
       );
 
-      print('Response Status: ${response.statusCode}');
-      print('Response Body: ${response.body}');
-
+      Map<String, dynamic> data = jsonDecode(response.body);
       if (response.statusCode == 200) {
-        Map<String, dynamic> data = jsonDecode(response.body);
         print('Login successful: $data');
 
         // Extract the user's name from the response, use email as fallback
@@ -76,6 +73,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
         // Navigate to HomeScreen
         if (!mounted) return;
+        
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'])));
+        
+        
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -85,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login failed. Please try again.')),
+          SnackBar(content: Text(data['message'])),
         );
       }
     } catch (error) {

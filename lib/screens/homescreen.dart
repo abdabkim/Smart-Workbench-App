@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import 'package:smart_workbench_app/providers/user_provider.dart';
 import 'package:smart_workbench_app/screens/adddevicesscreen.dart';
 import 'package:smart_workbench_app/screens/automationscreen.dart';
 import 'package:smart_workbench_app/screens/controlpanelscreen.dart';
@@ -7,6 +9,7 @@ import 'package:smart_workbench_app/screens/dashboardscreen.dart';
 import 'package:smart_workbench_app/screens/loginscreen.dart';
 import 'package:smart_workbench_app/screens/monitoringscreen.dart';
 import 'package:smart_workbench_app/screens/settingsscreen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 import 'package:smart_workbench_app/screens/signupscreen.dart';
@@ -35,13 +38,44 @@ class _HomeScreenState extends State<HomeScreen> {
       _selectedIndex = index;
     });
   }
+  Future<void> getUser()async{
+    try{
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String token = prefs.getString('token') ?? '';
+    final response = await http.get(
+      Uri.parse('http://192.168.0.8:8000/auth/getuser'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+        'Authorization': 'Bearer $token'
+      },
+    );
+    Map<String, dynamic> data = jsonDecode(response.body);
+
+    Provider.of<User>(context,listen: false).update(data);
+  }catch (error) {
+      print('ERROR $error');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An error occurred. Please try again later.')),
+      );
+     }
+    }
+
+  @override
+  void initState() {
+   WidgetsBinding.instance.addPostFrameCallback((_){
+     getUser();
+   }); // TODO: implement initState
+    super.initState();
+  }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: Text('Hello'), // Display welcome message
+        title: Text('Hello ${Provider.of<User>(context).getName()}'), // Display welcome message
         actions: [
           if (_selectedIndex == 0) // Only show on Dashboard
             IconButton(
