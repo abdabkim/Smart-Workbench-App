@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_workbench_app/screens/devicecategoryscreen.dart';
 import 'package:smart_workbench_app/widget/devicetypecard.dart';
 
 class AddDevicesScreen extends StatelessWidget {
@@ -42,7 +43,12 @@ class AddDevicesScreen extends StatelessWidget {
                         title: 'Smart Phone Charger',
                         icon: Icons.power,
                         onTap: () {
-                          // Navigate to Smart Plug setup
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DeviceCategoryScreen(deviceType: 'Smart Phone Charger'),
+                            ),
+                          ); // Navigate to Smart Plug setup
                         },
                         backgroundColor: Colors.brown,
                         textColor: Colors.white,
