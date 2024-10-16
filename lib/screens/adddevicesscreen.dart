@@ -46,7 +46,7 @@ class AddDevicesScreen extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => DeviceCategoryScreen(deviceType: 'Smart Phone Charger'),
+                              builder: (context) => DeviceAreaInputScreen(deviceType: 'Smart Phone Charger'),
                             ),
                           ); // Navigate to Smart Plug setup
                         },
@@ -57,7 +57,12 @@ class AddDevicesScreen extends StatelessWidget {
                         title: 'Wireless Charger',
                         icon: Icons.power,
                         onTap: () {
-                          // Navigate to Smart Plug setup
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DeviceAreaInputScreen(deviceType: 'Smart Phone Charger'),
+                            ),
+                          );  // Navigate to Smart Plug setup
                         },
                         backgroundColor: Colors.brown,
                         textColor: Colors.white,
@@ -66,7 +71,12 @@ class AddDevicesScreen extends StatelessWidget {
                         title: 'Light',
                         icon: Icons.thermostat,
                         onTap: () {
-                          // Navigate to Thermostat setup
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DeviceAreaInputScreen(deviceType: 'Smart Phone Charger'),
+                            ),
+                          ); // Navigate to Thermostat setup
                         },
                         backgroundColor: Colors.brown,
                         textColor: Colors.white,
@@ -75,7 +85,12 @@ class AddDevicesScreen extends StatelessWidget {
                         title: 'Security Camera',
                         icon: Icons.videocam,
                         onTap: () {
-                          // Navigate to Security Camera setup
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DeviceAreaInputScreen(deviceType: 'Smart Phone Charger'),
+                            ),
+                          );  // Navigate to Security Camera setup
                         },
                         backgroundColor: Colors.brown,
                         textColor: Colors.white,
@@ -84,7 +99,12 @@ class AddDevicesScreen extends StatelessWidget {
                         title: 'Table Saw',
                         icon: Icons.view_week,
                         onTap: () {
-                          // Navigate to Smart Light setup
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DeviceAreaInputScreen(deviceType: 'Smart Phone Charger'),
+                            ),
+                          ); // Navigate to Smart Light setup
                         },
                         backgroundColor: Colors.brown,
                         textColor: Colors.white,
@@ -93,7 +113,12 @@ class AddDevicesScreen extends StatelessWidget {
                         title: 'Miter Saw',
                         icon: Icons.cut,
                         onTap: () {
-                          // Navigate to Security Camera setup
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DeviceAreaInputScreen(deviceType: 'Smart Phone Charger'),
+                            ),
+                          );  // Navigate to Security Camera setup
                         },
                         backgroundColor: Colors.brown,
                         textColor: Colors.white,
@@ -102,7 +127,12 @@ class AddDevicesScreen extends StatelessWidget {
                         title: 'Circular Saw',
                         icon: Icons.circle,
                         onTap: () {
-                          // Navigate to Security Camera setup
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DeviceAreaInputScreen(deviceType: 'Smart Phone Charger'),
+                            ),
+                          ); // Navigate to Security Camera setup
                         },
                         backgroundColor: Colors.brown,
                         textColor: Colors.white,
@@ -111,7 +141,12 @@ class AddDevicesScreen extends StatelessWidget {
                         title: 'Planer',
                         icon: Icons.horizontal_rule,
                         onTap: () {
-                          // Navigate to Security Camera setup
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DeviceAreaInputScreen(deviceType: 'Smart Phone Charger'),
+                            ),
+                          );  // Navigate to Security Camera setup
                         },
                         backgroundColor: Colors.brown,
                         textColor: Colors.white,
@@ -120,7 +155,12 @@ class AddDevicesScreen extends StatelessWidget {
                         title: 'Router',
                         icon: Icons.router,
                         onTap: () {
-                          // Navigate to Security Camera setup
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DeviceAreaInputScreen(deviceType: 'Smart Phone Charger'),
+                            ),
+                          );  // Navigate to Security Camera setup
                         },
                         backgroundColor: Colors.brown,
                         textColor: Colors.white,
@@ -129,7 +169,12 @@ class AddDevicesScreen extends StatelessWidget {
                         title: 'Drill Press',
                         icon: Icons.build,
                         onTap: () {
-                          // Navigate to Security Camera setup
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DeviceAreaInputScreen(deviceType: 'Smart Phone Charger'),
+                            ),
+                          ); // Navigate to Security Camera setup
                         },
                         backgroundColor: Colors.brown,
                         textColor: Colors.white,
@@ -138,7 +183,12 @@ class AddDevicesScreen extends StatelessWidget {
                         title: 'Belt Sander',
                         icon: Icons.drag_indicator,
                         onTap: () {
-                          // Navigate to Security Camera setup
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DeviceAreaInputScreen(deviceType: 'Smart Phone Charger'),
+                            ),
+                          ); // Navigate to Security Camera setup
                         },
                         backgroundColor: Colors.brown,
                         textColor: Colors.white,
@@ -147,7 +197,12 @@ class AddDevicesScreen extends StatelessWidget {
                         title: 'Joiner',
                         icon: Icons.unfold_more,
                         onTap: () {
-                          // Navigate to Security Camera setup
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DeviceAreaInputScreen(deviceType: 'Smart Phone Charger'),
+                            ),
+                          ); // Navigate to Security Camera setup
                         },
                         backgroundColor: Colors.brown,
                         textColor: Colors.white,
@@ -156,7 +211,12 @@ class AddDevicesScreen extends StatelessWidget {
                         title: 'Jigsaw',
                         icon: Icons.show_chart,
                         onTap: () {
-                          // Navigate to Security Camera setup
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DeviceAreaInputScreen(deviceType: 'Smart Phone Charger'),
+                            ),
+                          );// Navigate to Security Camera setup
                         },
                         backgroundColor: Colors.brown,
                         textColor: Colors.white,

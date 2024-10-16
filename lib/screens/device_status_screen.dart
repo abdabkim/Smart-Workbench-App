@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 
 class DeviceStatusScreen extends StatefulWidget {
   final String deviceType;
-  final String category;
+  final String area;
 
   const DeviceStatusScreen({
     Key? key,
     required this.deviceType,
-    required this.category,
+    required this.area,
   }) : super(key: key);
 
   @override
@@ -38,7 +38,7 @@ class _DeviceStatusScreenState extends State<DeviceStatusScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Category: ${widget.category}',
+                  'Area: ${widget.area}',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
