@@ -1,15 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:smart_workbench_app/screens/adddevicesscreen.dart';
-import 'package:smart_workbench_app/screens/automationscreen.dart';
-import 'package:smart_workbench_app/screens/controlpanelscreen.dart';
-import 'package:smart_workbench_app/screens/dashboardscreen.dart';
-import 'package:smart_workbench_app/screens/homescreen.dart';
 import 'package:smart_workbench_app/screens/loginscreen.dart';
-import 'package:smart_workbench_app/screens/monitoringscreen.dart';
-import 'package:smart_workbench_app/screens/settingsscreen.dart';
 import 'dart:convert';
-
 import 'package:smart_workbench_app/screens/signupscreen.dart';
 
 class WelcomeScreen extends StatelessWidget {

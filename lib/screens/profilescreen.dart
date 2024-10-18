@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:smart_workbench_app/screens/homescreen.dart';
-import 'package:smart_workbench_app/screens/welcomescreen.dart';
-
-
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);

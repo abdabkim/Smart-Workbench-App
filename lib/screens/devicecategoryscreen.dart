@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:smart_workbench_app/screens/device_status_screen.dart';
+import 'package:smart_workbench_app/screens/devicestatusscreen.dart';
 
 class DeviceAreaInputScreen extends StatefulWidget {
   final String deviceType;
@@ -90,7 +90,7 @@ class _DeviceAreaInputScreenState extends State<DeviceAreaInputScreen> {
       MaterialPageRoute(
         builder: (context) => DeviceStatusScreen(
           deviceType: widget.deviceType,
-          area: area,
+          area: area, category: '',
         ),
       ),
     );

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:smart_workbench_app/providers/user_provider.dart';
-import 'package:smart_workbench_app/screens/adddevicesscreen.dart';
 import 'package:smart_workbench_app/screens/automationscreen.dart';
+import 'package:smart_workbench_app/screens/categoryselectionscreen.dart';
 import 'package:smart_workbench_app/screens/controlpanelscreen.dart';
 import 'package:smart_workbench_app/screens/dashboardscreen.dart';
 import 'package:smart_workbench_app/screens/loginscreen.dart';
@@ -192,7 +192,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const AddDevicesScreen(),
+              builder: (context) => const CategorySelectionScreen(),
             ),
           );
         },
