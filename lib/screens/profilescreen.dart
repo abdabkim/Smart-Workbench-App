@@ -1,15 +1,129 @@
 import 'package:flutter/material.dart';
-import 'package:smart_workbench_app/screens/homescreen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:smart_workbench_app/screens/loginscreen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
+
+  @override
+  _ProfileScreenState createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  String userName = '';
+  String userEmail = '';
+  String jobRole = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    final email = prefs.getString('email');
+
+    if (email != null) {
+      // Try to fetch user data from backend
+      try {
+        final response = await http.get(
+          Uri.parse('http://192.168.0.6:8000/auth/user-profile'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        );
+
+        if (response.statusCode == 200) {
+          final userData = jsonDecode(response.body);
+          setState(() {
+            userName = userData['name'] ?? email.split('@')[0];
+            userEmail = email;
+            jobRole = userData['jobRole'] ?? 'Not specified';
+          });
+        } else {
+          // If backend request fails, use stored data
+          setState(() {
+            userName = email.split('@')[0];
+            userEmail = email;
+            jobRole = 'Not specified';
+          });
+        }
+      } catch (e) {
+        // If there's an error, use stored data
+        setState(() {
+          userName = email.split('@')[0];
+          userEmail = email;
+          jobRole = 'Not specified';
+        });
+      }
+    }
+  }
+
+  Future<void> _showLogoutConfirmation() async {
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Confirm Logout'),
+          content: Text('Are you sure you want to log out?'),
+          actions: [
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Logout'),
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _handleLogout();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _handleLogout() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+
+
+      if (!mounted) return;
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Successfully logged out')),
+      );
+
+      // Navigate to login screen
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+            (Route<dynamic> route) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error during logout. Please try again.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // Background image covering the entire screen
           Image.asset(
             'assets/bg.jpg',
             fit: BoxFit.cover,
@@ -22,7 +136,6 @@ class ProfileScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 20),
-                  // Profile Picture
                   Center(
                     child: CircleAvatar(
                       radius: 50,
@@ -49,28 +162,22 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  // User Information
                   _buildSection(
                     'User Information',
                     [
-                      _buildInfoTile('Name', 'John Doe'),
-                      _buildInfoTile('Job Role', 'Senior Engineer'),
-                      _buildInfoTile('Email', 'john.doe@techcorp.com'),
+                      _buildInfoTile('Name', userName),
+                      _buildInfoTile('Job Role', jobRole),
+                      _buildInfoTile('Email', userEmail),
                     ],
                   ),
-                  // Workbench Preferences
                   _buildSection(
                     'Workbench Preferences',
                     [
                       _buildPreferenceTile('Tool Preferences', Icons.build),
-                      _buildPreferenceTile(
-                          'Saved Workflows',
-                          Icons
-                              .article), // Changed from Icons.workflow to Icons.article
+                      _buildPreferenceTile('Saved Workflows', Icons.article),
                       _buildPreferenceTile('Settings', Icons.settings),
                     ],
                   ),
-                  // Workstation Status
                   _buildSection(
                     'Workstation Status',
                     [
@@ -83,8 +190,7 @@ class ProfileScreen extends StatelessWidget {
                   _buildSection(
                     'App Settings',
                     [
-                      _buildSettingsTile(
-                          'Account Settings', Icons.manage_accounts),
+                      _buildSettingsTile('Account Settings', Icons.manage_accounts),
                       _buildSettingsTile('Privacy Settings', Icons.privacy_tip),
                       _buildLogoutButton(context),
                     ],
@@ -179,13 +285,7 @@ class ProfileScreen extends StatelessWidget {
             style: TextStyle(fontSize: 18, color: Colors.white),
           ),
         ),
-        onPressed: () {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
-                (Route<dynamic> route) => false,
-          );
-        },
+        onPressed: _showLogoutConfirmation,
       ),
     );
   }

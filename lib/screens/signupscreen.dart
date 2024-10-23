@@ -20,7 +20,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     try {
       print('Attempting to sign up user...');
       final response = await http.post(
-        Uri.parse('http://192.168.0.8:8000/auth/signup'),
+        Uri.parse('http://192.168.0.6:8000/auth/signup'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },
