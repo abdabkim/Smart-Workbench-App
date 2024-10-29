@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:smart_workbench_app/screens/devicestatusscreen.dart';
-
+import 'package:smart_workbench_app/screens/devicecategoryscreen.dart';
 
 class SawToolScreen extends StatefulWidget {
+  const SawToolScreen({Key? key}) : super(key: key);
+
   @override
-  _SawToolScreenState createState() => _SawToolScreenState();
+  State<SawToolScreen> createState() => _SawToolScreenState();
 }
 
 class _SawToolScreenState extends State<SawToolScreen> {
   final TextEditingController _toolNameController = TextEditingController();
+
+  // Predefined list of saw tools
   final List<String> sawTools = [
     'Table Saw',
     'Miter Saw',
@@ -17,17 +20,22 @@ class _SawToolScreenState extends State<SawToolScreen> {
     'Band Saw',
   ];
 
-  @override
-  void dispose() {
-    _toolNameController.dispose();
-    super.dispose();
+  void _navigateToDeviceArea(String toolName) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DeviceAreaInputScreen(
+          deviceType: toolName,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Saw Tool'),
+        title: const Text('Add Saw Tool'),
         backgroundColor: Colors.brown.shade50,
       ),
       body: Stack(
@@ -43,11 +51,15 @@ class _SawToolScreenState extends State<SawToolScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  'Select a pre-defined saw tool or add your own:',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                const Text(
+                  'Select a saw tool or add your own:',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.brown,
+                  ),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Expanded(
                   child: ListView.builder(
                     itemCount: sawTools.length,
@@ -55,30 +67,40 @@ class _SawToolScreenState extends State<SawToolScreen> {
                       return Card(
                         child: ListTile(
                           title: Text(sawTools[index]),
-                          onTap: () => _navigateToDeviceStatus(context, sawTools[index]),
+                          trailing: const Icon(Icons.arrow_forward_ios),
+                          onTap: () => _navigateToDeviceArea(sawTools[index]),
                         ),
                       );
                     },
                   ),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 TextField(
                   controller: _toolNameController,
                   decoration: InputDecoration(
-                    labelText: 'Custom Saw Tool Name',
+                    labelText: 'Other Saw Tool',
                     fillColor: Colors.white,
                     filled: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
+                  onSubmitted: (value) {
+                    if (value.isNotEmpty) {
+                      _navigateToDeviceArea(value.trim());
+                      _toolNameController.clear();
+                    }
+                  },
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 ElevatedButton(
-                  child: Text('Add Custom Saw Tool'),
                   onPressed: () {
                     if (_toolNameController.text.isNotEmpty) {
-                      _navigateToDeviceStatus(context, _toolNameController.text);
+                      _navigateToDeviceArea(_toolNameController.text.trim());
+                      _toolNameController.clear();
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Please enter a tool name')),
+                        const SnackBar(content: Text('Please enter a tool name')),
                       );
                     }
                   },
@@ -86,6 +108,7 @@ class _SawToolScreenState extends State<SawToolScreen> {
                     backgroundColor: Colors.brown,
                     foregroundColor: Colors.white,
                   ),
+                  child: const Text('Add Custom Tool'),
                 ),
               ],
             ),
@@ -95,16 +118,9 @@ class _SawToolScreenState extends State<SawToolScreen> {
     );
   }
 
-  void _navigateToDeviceStatus(BuildContext context, String toolName) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => DeviceStatusScreen(
-          deviceType: toolName,
-          category: 'Saw Tool',
-          area: 'Workshop', // You might want to allow users to select or input this
-        ),
-      ),
-    );
+  @override
+  void dispose() {
+    _toolNameController.dispose();
+    super.dispose();
   }
 }

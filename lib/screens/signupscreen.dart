@@ -33,7 +33,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
 
-      if (response.statusCode == 201) {  // Changed from 200 to 201
+      if (response.statusCode == 201) {
         var data = jsonDecode(response.body);
         print('Sign-up successful: $data');
 
@@ -75,9 +75,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
     }
   }
-
-// ... rest of the code remains the same ...
-
 
   @override
   Widget build(BuildContext context) {

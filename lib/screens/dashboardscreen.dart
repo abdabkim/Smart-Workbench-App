@@ -3,7 +3,6 @@ import 'package:smart_workbench_app/screens/smartplugscreen.dart';
 import 'package:smart_workbench_app/screens/smartworkspacescreen.dart';
 import 'package:smart_workbench_app/widget/devicecard.dart';
 
-
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({Key? key}) : super(key: key);
 
@@ -46,7 +45,11 @@ class DashboardScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => SmartPlugScreen(),
+                          builder: (context) => SmartPlugScreen(
+                            deviceType: 'Smart Plug',  // Added required parameter
+                            category: 'Power Device',  // Added required parameter
+                            area: 'Workshop',         // Added required parameter
+                          ),
                         ),
                       );
                     },

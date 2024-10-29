@@ -69,7 +69,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       var request = http.MultipartRequest(
         'PUT',
-        Uri.parse('http://192.168.0.6:8000/auth/update-profile-picture'),
+        Uri.parse('http://10.100.25.221:8000/auth/update-profile-picture'),
       );
 
       request.headers.addAll({

@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:smart_workbench_app/screens/devicestatusscreen.dart';
+import 'package:smart_workbench_app/screens/devicecategoryscreen.dart';
 
-class DrillToolScreen extends StatelessWidget {
+class DrillToolScreen extends StatefulWidget {
+  const DrillToolScreen({Key? key}) : super(key: key);
+
+  @override
+  State<DrillToolScreen> createState() => _DrillToolScreenState();
+}
+
+class _DrillToolScreenState extends State<DrillToolScreen> {
   final TextEditingController _toolNameController = TextEditingController();
 
-  // Define a list of predefined drill tools
+  // Predefined list of drill tools
   final List<String> drillTools = [
     'Electric drill',
     'Circular Saw',
@@ -18,11 +25,22 @@ class DrillToolScreen extends StatelessWidget {
     'Biscuit Joiner',
   ];
 
+  void _navigateToAreaScreen(String toolName) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DeviceAreaInputScreen(
+          deviceType: toolName,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Drill Tool'),
+        title: const Text('Add Drill Tool'),
         backgroundColor: Colors.brown.shade50,
       ),
       body: Stack(
@@ -38,11 +56,15 @@ class DrillToolScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  'Select a pre-defined drill tool or add your own:',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                const Text(
+                  'Select a drill tool or add your own:',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.brown,
+                  ),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Expanded(
                   child: ListView.builder(
                     itemCount: drillTools.length,
@@ -50,30 +72,34 @@ class DrillToolScreen extends StatelessWidget {
                       return Card(
                         child: ListTile(
                           title: Text(drillTools[index]),
-                          onTap: () => _navigateToDeviceStatus(context, drillTools[index]),
+                          trailing: const Icon(Icons.arrow_forward_ios),
+                          onTap: () => _navigateToAreaScreen(drillTools[index]),
                         ),
                       );
                     },
                   ),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 TextField(
                   controller: _toolNameController,
                   decoration: InputDecoration(
-                    labelText: 'Custom Drill Tool Name',
+                    labelText: 'Other Drill Tool',
                     fillColor: Colors.white,
                     filled: true,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 ElevatedButton(
-                  child: Text('Add Custom Drill Tool'),
                   onPressed: () {
                     if (_toolNameController.text.isNotEmpty) {
-                      _navigateToDeviceStatus(context, _toolNameController.text);
+                      _navigateToAreaScreen(_toolNameController.text.trim());
+                      _toolNameController.clear();
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Please enter a tool name')),
+                        const SnackBar(content: Text('Please enter a tool name')),
                       );
                     }
                   },
@@ -81,6 +107,7 @@ class DrillToolScreen extends StatelessWidget {
                     backgroundColor: Colors.brown,
                     foregroundColor: Colors.white,
                   ),
+                  child: const Text('Add Custom Tool'),
                 ),
               ],
             ),
@@ -90,16 +117,9 @@ class DrillToolScreen extends StatelessWidget {
     );
   }
 
-  void _navigateToDeviceStatus(BuildContext context, String toolName) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => DeviceStatusScreen(
-          deviceType: toolName,
-          category: 'Drill Tool',
-          area: 'Workshop', // You might want to allow users to select or input this
-        ),
-      ),
-    );
+  @override
+  void dispose() {
+    _toolNameController.dispose();
+    super.dispose();
   }
 }

@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 
-
-
 class ControlCard extends StatelessWidget {
   final String title;
   final IconData icon;
