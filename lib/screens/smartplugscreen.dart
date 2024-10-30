@@ -32,23 +32,36 @@ class _SmartPlugScreenState extends State<SmartPlugScreen> {
   }
 
   Future<void> _getAuthTokenAndFetchDevices() async {
-    final prefs = await SharedPreferences.getInstance();
-    authToken = prefs.getString('token');
-    print('Auth Token: $authToken');
-    await fetchDevices();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      setState(() {
+        authToken = prefs.getString('token');
+      });
+      await fetchDevices();
+    } catch (e) {
+      print('Error getting auth token: $e');
+      _showError('Failed to initialize: $e');
+    }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
 
   Future<void> fetchDevices() async {
     if (authToken == null) {
-      print('No auth token available');
-      setState(() {
-        isLoading = false;
-      });
+      _showError('No authentication token available');
+      setState(() => isLoading = false);
       return;
     }
 
     try {
-      print('Fetching devices...');
       final response = await http.get(
         Uri.parse('$baseUrl/retrieveall'),
         headers: {
@@ -57,69 +70,68 @@ class _SmartPlugScreenState extends State<SmartPlugScreen> {
         },
       );
 
+      if (!mounted) return;
+
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
-        if (mounted) {
-          setState(() {
-            devices = responseData['devices'] ?? [];
-            isLoading = false;
-          });
-        }
-        print('Devices loaded: ${devices.length}');
+        setState(() {
+          devices = responseData['devices'] ?? [];
+          isLoading = false;
+        });
       } else {
-        throw Exception('Failed to load devices: ${response.statusCode}');
+        throw Exception('Server returned ${response.statusCode}: ${response.body}');
       }
     } catch (e) {
       print('Error fetching devices: $e');
       if (mounted) {
-        setState(() {
-          isLoading = false;
-        });
+        setState(() => isLoading = false);
+        _showError('Failed to load devices: $e');
       }
     }
   }
 
   Future<void> updateDeviceStatus(String deviceId, bool newStatus) async {
-    if (authToken == null) return;
+    if (authToken == null) {
+      _showError('No authentication token available');
+      return;
+    }
 
     try {
-      print('Updating status for device $deviceId to $newStatus');
-
-      // Mirror exactly what's working in DeviceStatusScreen
-      final url = Uri.parse('http://192.168.0.6:8000/device/update/$deviceId');
-      print('Making request to: $url');
+      // Optimistically update UI
+      setState(() {
+        final deviceIndex = devices.indexWhere((d) => d['_id'] == deviceId);
+        if (deviceIndex != -1) {
+          devices[deviceIndex]['status'] = newStatus;
+        }
+      });
 
       final response = await http.put(
-        url,
+        Uri.parse('$baseUrl/update/$deviceId'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $authToken',
         },
         body: json.encode({
-          'status': newStatus,
+          'status': newStatus.toString(), // Convert to string as per API requirement
         }),
       );
 
-      print('Update response status: ${response.statusCode}');
-      print('Update response body: ${response.body}');
+      if (!mounted) return;
 
-      if (response.statusCode == 200) {
+      if (response.statusCode != 200) {
+        // Revert UI if update failed
         setState(() {
           final deviceIndex = devices.indexWhere((d) => d['_id'] == deviceId);
           if (deviceIndex != -1) {
-            devices[deviceIndex]['status'] = newStatus;
+            devices[deviceIndex]['status'] = !newStatus;
           }
         });
-        print('Status updated successfully');
-      } else {
-        throw Exception('Failed to update status');
+        throw Exception('Server returned ${response.statusCode}: ${response.body}');
       }
     } catch (e) {
       print('Error updating status: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update device status: $e')),
-        );
+        _showError('Failed to update device status: $e');
       }
     }
   }
@@ -132,11 +144,17 @@ class _SmartPlugScreenState extends State<SmartPlugScreen> {
     }
 
     if (devices.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Text(
-          'No devices found',
-          style: TextStyle(color: Colors.brown),
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Text(
+            'No devices found',
+            style: TextStyle(
+              color: Colors.brown,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       );
     }
@@ -170,7 +188,9 @@ class _SmartPlugScreenState extends State<SmartPlugScreen> {
             ),
             trailing: Switch(
               value: status,
-              onChanged: (value) => updateDeviceStatus(device['_id'], value),
+              onChanged: (bool value) {
+                updateDeviceStatus(device['_id'], value);
+              },
               activeColor: Colors.green,
               inactiveTrackColor: Colors.red.shade200,
             ),
@@ -184,7 +204,7 @@ class _SmartPlugScreenState extends State<SmartPlugScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Plugs Panel'),
+        title: const Text('Control Panel'),
         backgroundColor: Colors.brown.shade50,
       ),
       body: RefreshIndicator(
