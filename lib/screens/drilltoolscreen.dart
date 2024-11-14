@@ -14,15 +14,11 @@ class _DrillToolScreenState extends State<DrillToolScreen> {
   // Predefined list of drill tools
   final List<String> drillTools = [
     'Electric drill',
-    'Circular Saw',
-    'Jigsaw',
-    'Router',
-    'Sanders',
-    'Reciprocating Saw',
-    'Miter Saw',
-    'Table Saw',
-    'Planer',
-    'Biscuit Joiner',
+    'Hammer Drill',
+    'Drill Press',
+    'Right-Angle Drill (corded)',
+    'Rotary Hammer',
+    'Magnetic Drill',
   ];
 
   void _navigateToAreaScreen(String toolName) {

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io';
+import 'dart:async';
+import 'package:http_parser/http_parser.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_workbench_app/screens/loginscreen.dart';
 
@@ -8,71 +12,194 @@ class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
 
   @override
-  _SignUpScreenState createState() => _SignUpScreenState();
+  State<SignUpScreen> createState() => _SignUpScreenState();
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final TextEditingController professionController = TextEditingController();
+  File? _image;
+  final ImagePicker _picker = ImagePicker();
+  bool _isLoading = false;
 
-  Future<void> signUpUser(BuildContext context, String name, String email, String password) async {
-    try {
-      print('Attempting to sign up user...');
-      final response = await http.post(
-        Uri.parse('http://192.168.0.6:8000/auth/signup'),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(<String, String>{
-          'name': name,
-          'email': email,
-          'password': password,
-        }),
+  Future<void> _getImage() async {
+    final XFile? pickedFile = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,
+    );
+    if (pickedFile != null) {
+      setState(() {
+        _image = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<void> saveUserData(String name, String email, String profession) async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('name', name);
+    await prefs.setString('email', email);
+    await prefs.setString('profession', profession);
+    await prefs.setBool('isLoggedIn', true);
+  }
+
+  Future<void> signUpUser(BuildContext context) async {
+    if (_image == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a profile photo'),
+          backgroundColor: Colors.red,
+        ),
       );
-      print('Response status: ${response.statusCode}');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      print('Starting registration process...');
+
+      final uri = Uri.parse('http://192.168.0.9:8000/auth/signup');
+      var request = http.MultipartRequest('POST', uri);
+
+      // Add text fields
+      request.fields['name'] = nameController.text.trim();
+      request.fields['email'] = emailController.text.trim().toLowerCase();
+      request.fields['password'] = passwordController.text;
+      request.fields['profession'] = professionController.text.trim();
+
+      print('Preparing file upload...');
+      // Get file extension
+      String extension = _image!.path.split('.').last.toLowerCase();
+      if (!['jpg', 'jpeg', 'png'].contains(extension)) {
+        extension = 'jpg'; // Default to jpg if unknown
+      }
+
+      // Create unique filename
+      String filename = 'photo_${DateTime.now().millisecondsSinceEpoch}.$extension';
+
+      // Add file with correct field name matching backend
+      var photoStream = http.ByteStream(_image!.openRead());
+      var length = await _image!.length();
+
+      print('Adding photo to request...');
+      print('Filename: $filename');
+      print('File size: $length bytes');
+      print('Content type: image/$extension');
+
+      var multipartFile = http.MultipartFile(
+        'photo',
+        photoStream,
+        length,
+        filename: filename,
+        contentType: MediaType('image', extension),
+      );
+      request.files.add(multipartFile);
+
+      // Print out the entire request for debugging
+      print('Request fields:');
+      request.fields.forEach((key, value) {
+        if (key != 'password') {
+          print('$key: $value');
+        }
+      });
+      print('Request files:');
+      request.files.forEach((file) {
+        print('Field name: ${file.field}');
+        print('Filename: ${file.filename}');
+        print('Content type: ${file.contentType}');
+      });
+
+      print('Sending request to server...');
+
+      // Send request with timeout
+      var streamedResponse = await request.send().timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw TimeoutException('Request timed out');
+        },
+      );
+
+      print('Response status code: ${streamedResponse.statusCode}');
+
+      // Get response
+      var response = await http.Response.fromStream(streamedResponse);
+      print('Response headers: ${response.headers}');
       print('Response body: ${response.body}');
 
-      if (response.statusCode == 201) {
-        var data = jsonDecode(response.body);
-        print('Sign-up successful: $data');
+      try {
+        final responseData = jsonDecode(response.body);
+        print('Parsed response: $responseData');
 
-        // Save user data in SharedPreferences
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        await prefs.setString('name', name);
-        await prefs.setString('email', email);
-        if (data.containsKey('token')) {
-          await prefs.setString('token', data['token']);
+        if (responseData['message'] is Map &&
+            responseData['message']['storageErrors'] != null) {
+          throw Exception('File storage error on server');
         }
 
-        print('User data saved to SharedPreferences');
-
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Sign up successful! Redirecting to login...')),
-        );
-
-        print('Attempting to navigate to LoginScreen...');
-        // Use Future.delayed to ensure the navigation happens after the current build cycle
-        Future.delayed(Duration(seconds: 1), () {
-          print('Executing delayed navigation...');
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => LoginScreen()),
+        if (response.statusCode == 200 || response.statusCode == 201) {
+          print('Registration successful!');
+          await saveUserData(
+              nameController.text,
+              emailController.text,
+              professionController.text
           );
-        });
-      } else {
-        print('Sign-up failed with status code: ${response.statusCode}');
-        // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to sign up. Please try again.')),
-        );
+
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Verification email sent. Please check your email.'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 5),
+              ),
+            );
+
+            await Future.delayed(const Duration(seconds: 2));
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const LoginScreen()),
+            );
+          }
+        } else {
+          throw Exception(responseData['message'] ?? 'Registration failed');
+        }
+      } catch (e) {
+        print('Error processing response: $e');
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Registration failed: ${e.toString()}'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
       }
     } catch (error) {
-      print('ERROR during sign-up: $error');
-      // Show error message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('An error occurred. Please try again later.')),
-      );
+      print('Error during registration: $error');
+      String errorMessage = 'Connection error';
+
+      if (error is TimeoutException) {
+        errorMessage = 'Connection timed out. Please try again.';
+      }
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -110,39 +237,103 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     child: Container(
                       color: Colors.white.withOpacity(0.7),
                       child: Padding(
-                        padding: const EdgeInsets.all(16.0),
+                        padding: const EdgeInsets.fromLTRB(16.0, 50.0, 16.0, 16.0),
                         child: SingleChildScrollView(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              SizedBox(height: 40),
+                              GestureDetector(
+                                onTap: _getImage,
+                                child: Container(
+                                  width: 120,
+                                  height: 120,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[200],
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: _image != null
+                                      ? ClipOval(
+                                    child: Image.file(
+                                      _image!,
+                                      width: 120,
+                                      height: 120,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                      : Icon(
+                                    Icons.add_a_photo,
+                                    size: 40,
+                                    color: Colors.brown,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
                               buildTextField(nameController, Icons.person, 'Full Name'),
                               const SizedBox(height: 20),
                               buildTextField(emailController, Icons.email, 'Email'),
                               const SizedBox(height: 20),
                               buildTextField(passwordController, Icons.lock, 'Password', isPassword: true),
+                              const SizedBox(height: 20),
+                              buildTextField(professionController, Icons.work, 'Profession'),
                               const SizedBox(height: 30),
                               ElevatedButton(
-                                onPressed: () {
-                                  if (nameController.text.isNotEmpty &&
-                                      emailController.text.isNotEmpty &&
-                                      passwordController.text.isNotEmpty) {
-                                    signUpUser(context, nameController.text, emailController.text, passwordController.text);
-                                  } else {
+                                onPressed: _isLoading
+                                    ? null
+                                    : () {
+                                  if (nameController.text.trim().isEmpty ||
+                                      emailController.text.trim().isEmpty ||
+                                      passwordController.text.isEmpty ||
+                                      professionController.text.trim().isEmpty) {
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Please fill in all fields')),
+                                      const SnackBar(
+                                        content: Text('Please fill in all fields'),
+                                        backgroundColor: Colors.red,
+                                      ),
                                     );
+                                    return;
                                   }
+
+                                  if (!emailController.text.contains('@') ||
+                                      !emailController.text.contains('.')) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Please enter a valid email address'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                    return;
+                                  }
+
+                                  if (passwordController.text.length < 8) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Password must be at least 8 characters'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                    return;
+                                  }
+
+                                  signUpUser(context);
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.brown,
-                                  padding: EdgeInsets.symmetric(vertical: 16),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: const RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.zero,
                                   ),
                                 ),
-                                child: Text(
+                                child: _isLoading
+                                    ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                                    : const Text(
                                   'Sign up',
                                   style: TextStyle(fontSize: 18, color: Colors.white),
                                 ),
@@ -151,23 +342,26 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Text(
+                                  const Text(
                                     'Already have an account?',
                                     style: TextStyle(fontSize: 16, color: Colors.brown),
                                   ),
                                   TextButton(
                                     onPressed: () {
-                                      print('Log in button pressed');
                                       Navigator.pushReplacement(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => LoginScreen(),
+                                          builder: (context) => const LoginScreen(),
                                         ),
                                       );
                                     },
                                     child: Text(
                                       'Log in',
-                                      style: TextStyle(fontSize: 16, color: Colors.brown[800], fontWeight: FontWeight.bold),
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.brown[800],
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -191,16 +385,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return TextField(
       controller: controller,
       obscureText: isPassword,
-      style: TextStyle(color: Colors.black),
+      style: const TextStyle(color: Colors.black),
       decoration: InputDecoration(
         prefixIcon: Icon(icon, color: Colors.brown),
         hintText: hintText,
-        hintStyle: TextStyle(color: Colors.brown),
+        hintStyle: const TextStyle(color: Colors.brown),
         filled: false,
-        enabledBorder: UnderlineInputBorder(
+        enabledBorder: const UnderlineInputBorder(
           borderSide: BorderSide(color: Colors.brown),
         ),
-        focusedBorder: UnderlineInputBorder(
+        focusedBorder: const UnderlineInputBorder(
           borderSide: BorderSide(color: Colors.brown),
         ),
       ),

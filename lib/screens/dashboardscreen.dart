@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:smart_workbench_app/screens/smartplugscreen.dart';
+import 'package:smart_workbench_app/screens/controlpanelscreen.dart';
 import 'package:smart_workbench_app/screens/smartworkspacescreen.dart';
 import 'package:smart_workbench_app/widget/devicecard.dart';
 
@@ -39,33 +39,19 @@ class DashboardScreen extends StatelessWidget {
                     },
                   ),
                   DeviceCard(
-                    title: 'Smart Plug',
-                    icon: Icons.power,
+                    title: 'Control Panel',
+                    icon: Icons.dashboard_outlined,
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => SmartPlugScreen(
-                            deviceType: 'Smart Plug',  // Added required parameter
-                            category: 'Power Device',  // Added required parameter
-                            area: 'Workshop',         // Added required parameter
+                          builder: (context) => ControlPanelScreen(
+                            deviceType: 'Control Panel',
+                            category: 'Power Device',
+                            area: 'Workshop',
                           ),
                         ),
                       );
-                    },
-                  ),
-                  DeviceCard(
-                    title: 'Thermostat',
-                    icon: Icons.thermostat_outlined,
-                    onTap: () {
-                      // Add navigation or functionality
-                    },
-                  ),
-                  DeviceCard(
-                    title: 'Security Camera',
-                    icon: Icons.videocam_outlined,
-                    onTap: () {
-                      // Add navigation or functionality
                     },
                   ),
                 ],

@@ -15,7 +15,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   String userName = '';
   String userEmail = '';
-  String jobRole = '';
+  String profession = '';
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
 
@@ -30,11 +30,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final token = prefs.getString('token');
     final email = prefs.getString('email');
     final name = prefs.getString('name');
+    final profession = prefs.getString('profession');
 
     setState(() {
       userName = name ?? '';
       userEmail = email ?? '';
-      jobRole = 'Not specified';
+      this.profession = profession ?? '';
     });
   }
 
@@ -69,7 +70,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       var request = http.MultipartRequest(
         'PUT',
-        Uri.parse('http://10.100.25.221:8000/auth/update-profile-picture'),
+        Uri.parse('http://192.168.0.9:8000/auth/update-profile-picture'),
       );
 
       request.headers.addAll({
@@ -168,61 +169,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showEditProfileDialog() {
-    final nameController = TextEditingController(text: userName);
-    final jobRoleController = TextEditingController(text: jobRole);
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Edit Profile'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Name',
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: jobRoleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Job Role',
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () => Navigator.pop(context),
-            ),
-            TextButton(
-              child: const Text('Save'),
-              onPressed: () async {
-                await _updateProfile(nameController.text, jobRoleController.text);
-                if (!mounted) return;
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   Future<void> _updatePassword(String currentPassword, String newPassword) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
 
       final response = await http.put(
-        Uri.parse('http://192.168.0.6:8000/auth/update-password'),
+        Uri.parse('http://192.168.0.9:8000/auth/update-password'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -249,45 +202,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('An error occurred. Please try again later.')),
-      );
-    }
-  }
-
-  Future<void> _updateProfile(String newName, String newJobRole) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token');
-
-      final response = await http.put(
-        Uri.parse('http://192.168.0.6:8000/auth/update-profile'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
-          'name': newName,
-          'jobRole': newJobRole,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        setState(() {
-          userName = newName;
-          jobRole = newJobRole;
-        });
-        await prefs.setString('name', newName);
-
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated successfully')),
-        );
-      } else {
-        throw Exception('Failed to update profile');
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to update profile')),
       );
     }
   }
@@ -336,7 +250,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           height: 120,
                         )
                             : Image.asset(
-                          'assets/default_profile.png',
+                          'assets/female_avatar.jpg',
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -405,34 +319,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         subtitle: Text(userEmail),
                       ),
                       ListTile(
-                        title: const Text('Job Role'),
-                        subtitle: Text(jobRole),
+                        title: const Text('Profession'),
+                        subtitle: Text(profession),
                       ),
                       const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.brown,
-                                foregroundColor: Colors.white,
-                              ),
-                              onPressed: _showEditProfileDialog,
-                              child: const Text('Edit Profile'),
-                            ),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.brown,
+                            foregroundColor: Colors.white,
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.brown,
-                                foregroundColor: Colors.white,
-                              ),
-                              onPressed: _showPasswordChangeDialog,
-                              child: const Text('Reset Password'),
-                            ),
-                          ),
-                        ],
+                          onPressed: _showPasswordChangeDialog,
+                          child: const Text('Reset Password'),
+                        ),
                       ),
                     ],
                   ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:smart_workbench_app/screens/smartplugscreen.dart';
+import 'package:smart_workbench_app/screens/controlpanelscreen.dart';
 import 'package:smart_workbench_app/screens/homescreen.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -26,7 +26,7 @@ class _DeviceStatusScreenState extends State<DeviceStatusScreen> {
   String? deviceId;
   List<dynamic> allDevices = [];
   bool isLoading = true;
-  final String baseUrl = 'http://192.168.0.6:8000/device';
+  final String baseUrl = 'http://192.168.0.9:8000/device';
   String? authToken;
 
   @override
@@ -322,7 +322,7 @@ class _DeviceStatusScreenState extends State<DeviceStatusScreen> {
                       onPressed: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => SmartPlugScreen(
+                          builder: (context) => ControlPanelScreen(
                             deviceType: widget.deviceType,
                             category: widget.category,
                             area: widget.area,
