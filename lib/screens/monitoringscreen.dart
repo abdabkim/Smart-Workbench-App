@@ -23,7 +23,7 @@ class _MonitoringScreenState extends State<MonitoringScreen> {
   List<Map<String, dynamic>> historicalData = [];
   List<Map<String, dynamic>> alerts = [];
   Timer? _timer;
-  final String baseUrl = 'http://192.168.0.9:8000';
+  final String baseUrl = 'http://192.168.0.10:8000';
 
   // Sensor status tracking
   bool _isDataStale = false;

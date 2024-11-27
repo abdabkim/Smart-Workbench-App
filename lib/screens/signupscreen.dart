@@ -1,12 +1,11 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:http_parser/http_parser.dart';
 import 'dart:io';
 import 'dart:async';
-import 'package:http_parser/http_parser.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smart_workbench_app/screens/loginscreen.dart';
+import 'package:dio/dio.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
@@ -21,19 +20,30 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController professionController = TextEditingController();
   File? _image;
-  final ImagePicker _picker = ImagePicker();
+
   bool _isLoading = false;
 
+  final dio = Dio();
+
   Future<void> _getImage() async {
-    final XFile? pickedFile = await _picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 70,
-    );
-    if (pickedFile != null) {
+    // final XFile? pickedFile = await _picker.pickImage(
+    //   source: ImageSource.gallery,
+    // );
+
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+
+    if (result != null) {
       setState(() {
-        _image = File(pickedFile.path);
+        _image = File(result.files.single.path!);
       });
+    } else {
+      print("No file selected");
     }
+//    if (pickedFile != null) {
+//      setState(() {
+ //       _image = File(pickedFile.path);
+ //     });
+ //   }
   }
 
   Future<void> saveUserData(String name, String email, String profession) async {
@@ -45,164 +55,106 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Future<void> signUpUser(BuildContext context) async {
-    if (_image == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a profile photo'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
-
     try {
-      print('Starting registration process...');
-
-      final uri = Uri.parse('http://192.168.0.9:8000/auth/signup');
-      var request = http.MultipartRequest('POST', uri);
-
-      // Add text fields
-      request.fields['name'] = nameController.text.trim();
-      request.fields['email'] = emailController.text.trim().toLowerCase();
-      request.fields['password'] = passwordController.text;
-      request.fields['profession'] = professionController.text.trim();
-
-      print('Preparing file upload...');
-      // Get file extension
-      String extension = _image!.path.split('.').last.toLowerCase();
-      if (!['jpg', 'jpeg', 'png'].contains(extension)) {
-        extension = 'jpg'; // Default to jpg if unknown
-      }
-
-      // Create unique filename
-      String filename = 'photo_${DateTime.now().millisecondsSinceEpoch}.$extension';
-
-      // Add file with correct field name matching backend
-      var photoStream = http.ByteStream(_image!.openRead());
-      var length = await _image!.length();
-
-      print('Adding photo to request...');
-      print('Filename: $filename');
-      print('File size: $length bytes');
-      print('Content type: image/$extension');
-
-      var multipartFile = http.MultipartFile(
-        'photo',
-        photoStream,
-        length,
-        filename: filename,
-        contentType: MediaType('image', extension),
-      );
-      request.files.add(multipartFile);
-
-      // Print out the entire request for debugging
-      print('Request fields:');
-      request.fields.forEach((key, value) {
-        if (key != 'password') {
-          print('$key: $value');
-        }
-      });
-      print('Request files:');
-      request.files.forEach((file) {
-        print('Field name: ${file.field}');
-        print('Filename: ${file.filename}');
-        print('Content type: ${file.contentType}');
-      });
-
-      print('Sending request to server...');
-
-      // Send request with timeout
-      var streamedResponse = await request.send().timeout(
-        const Duration(seconds: 30),
-        onTimeout: () {
-          throw TimeoutException('Request timed out');
-        },
-      );
-
-      print('Response status code: ${streamedResponse.statusCode}');
-
-      // Get response
-      var response = await http.Response.fromStream(streamedResponse);
-      print('Response headers: ${response.headers}');
-      print('Response body: ${response.body}');
-
-      try {
-        final responseData = jsonDecode(response.body);
-        print('Parsed response: $responseData');
-
-        if (responseData['message'] is Map &&
-            responseData['message']['storageErrors'] != null) {
-          throw Exception('File storage error on server');
-        }
-
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          print('Registration successful!');
-          await saveUserData(
-              nameController.text,
-              emailController.text,
-              professionController.text
-          );
-
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Verification email sent. Please check your email.'),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 5),
-              ),
-            );
-
-            await Future.delayed(const Duration(seconds: 2));
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const LoginScreen()),
-            );
-          }
-        } else {
-          throw Exception(responseData['message'] ?? 'Registration failed');
-        }
-      } catch (e) {
-        print('Error processing response: $e');
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Registration failed: ${e.toString()}'),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 5),
-            ),
-          );
-        }
-      }
-    } catch (error) {
-      print('Error during registration: $error');
-      String errorMessage = 'Connection error';
-
-      if (error is TimeoutException) {
-        errorMessage = 'Connection timed out. Please try again.';
-      }
-
-      if (context.mounted) {
+      if (_image == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
+          const SnackBar(
+            content: Text('Please select a profile photo'),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
           ),
         );
+        return;
       }
+
+      setState(() {
+        _isLoading = true;
+      });
+
+      String name = nameController.text.trim();
+      String email = emailController.text.trim().toLowerCase();
+      String password = passwordController.text;
+      String profession = professionController.text.trim();
+
+      // Get the file name from the image path
+      String fileName = _image!.path.split('/').last;
+
+      // Create FormData with proper file handling
+      var formData = FormData.fromMap({
+        'name': name,
+        'email': email,
+        'password': password,
+        'profession': profession,
+        'photo': await MultipartFile.fromFile(
+          _image!.path,
+          filename: fileName,
+          // You might need to specify the content type
+          contentType: MediaType('image', 'jpeg'), // Adjust based on your image type
+        ),
+      });
+
+      // For debugging - print out the form data
+      print('Sending form data: ${formData.fields}');
+      print('File being sent: ${_image!.path}');
+
+      final response = await dio.post(
+          "http://192.168.0.10:8000/auth/signup",
+          data: formData,
+          options: Options(
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              // Add any additional headers your backend might require
+            },
+            // Add these to help with debugging
+            validateStatus: (status) => true,
+            followRedirects: false,
+            receiveDataWhenStatusError: true,
+          )
+      );
+
+      // Debug response
+      print('Response status: ${response.statusCode}');
+      print('Response data: ${response.data}');
+
+      Map<String, dynamic> responseData = response.data;
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // Save user data
+        await saveUserData(name, email, profession);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(responseData['message']?.toString() ?? 'Sign up successful'),
+              backgroundColor: Colors.green,
+            )
+        );
+
+        await Future.delayed(const Duration(seconds: 2));
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(responseData['message']?.toString() ?? 'Sign up failed'),
+              backgroundColor: Colors.red,
+            )
+        );
+      }
+    } catch (error) {
+      print('Error during sign up: $error');
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('An error occurred: ${error.toString()}'),
+            backgroundColor: Colors.red,
+          )
+      );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -427,3 +379,71 @@ class WaveClipper extends CustomClipper<Path> {
   @override
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
+
+
+/*
+ try {
+      if (_image == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select a profile photo'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      setState(() {
+        _isLoading = true;
+      });
+
+      final uri = Uri.parse('http://192.168.0.2:8000/auth/signup');
+      var request = http.MultipartRequest('POST', uri);
+
+      // Add text fields
+      request.fields['name'] = nameController.text.trim();
+      request.fields['email'] = emailController.text.trim().toLowerCase();
+      request.fields['password'] = passwordController.text;
+      request.fields['profession'] = professionController.text.trim();
+
+      request.files.add(http.MultipartFile.fromBytes('photo', File(_image!.path).readAsBytesSync(), filename: _image!.path));
+
+      var res = await request.send();
+      print(res.);
+      if (res.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Success'),
+              backgroundColor: Colors.red,
+            ));
+        saveUserData(nameController.text.trim(), emailController.text.trim().toLowerCase(), professionController.text.trim());
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Verification email sent. Please check your email.'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 5),
+          ),
+        );
+
+        await Future.delayed(const Duration(seconds: 2));
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed'),
+              backgroundColor: Colors.red,
+            ));
+      }
+    } catch (error) {
+      print(error);
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+ */

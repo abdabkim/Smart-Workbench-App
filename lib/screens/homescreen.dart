@@ -10,7 +10,6 @@ import 'package:smart_workbench_app/screens/monitoringscreen.dart';
 import 'package:smart_workbench_app/screens/settingsscreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-
 import 'package:smart_workbench_app/screens/signupscreen.dart';
 import 'package:smart_workbench_app/screens/smartplugsetupscreen.dart';
 
@@ -48,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String token = prefs.getString('token') ?? '';
       final response = await http.get(
-        Uri.parse('http://192.168.0.9:8000/auth/getuser'),
+        Uri.parse('http://192.168.0.10:8000/auth/getuser'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'Authorization': 'Bearer $token'

@@ -47,7 +47,7 @@ class PlugInScreen extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 32.0),
                   child: Text(
-                    'Plug in your Smart Plug. The app will check your Wi-Fi condition.',
+                    'Plug in your Smart Plug. The app will check your Wi-Fi or Bluetooth connection.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 16,
@@ -136,7 +136,7 @@ class WifiConnectScreen extends StatelessWidget {
                       ),
                       Expanded(
                         child: Text(
-                          'Check the Wi-Fi light',
+                          'Check the Wi-Fi or bluetooth light',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w500,
@@ -153,7 +153,7 @@ class WifiConnectScreen extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 32.0),
                   child: Text(
-                    'Look at your smart plug. Is the Wi-Fi light blinking orange and green/blue?',
+                    'Look at your smart plug. Is the Wi-Fi or bluetooth light blinking orange and green/blue?',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 16,
@@ -217,18 +217,7 @@ class WifiConnectScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-                      SizedBox(height: 8),
-                      TextButton(
-                        onPressed: () {
-                          // Handle help action
-                        },
-                        child: Text(
-                          'I Need Help',
-                          style: TextStyle(
-                            color: Colors.brown,
-                          ),
-                        ),
-                      ),
+
                     ],
                   ),
                 ),

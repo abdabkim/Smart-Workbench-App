@@ -70,7 +70,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       var request = http.MultipartRequest(
         'PUT',
-        Uri.parse('http://192.168.0.9:8000/auth/update-profile-picture'),
+        Uri.parse('http://192.168.0.10:8000/auth/update-profile-picture'),
       );
 
       request.headers.addAll({
@@ -175,7 +175,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final token = prefs.getString('token');
 
       final response = await http.put(
-        Uri.parse('http://192.168.0.9:8000/auth/update-password'),
+        Uri.parse('http://192.168.0.10:8000/auth/update-password'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

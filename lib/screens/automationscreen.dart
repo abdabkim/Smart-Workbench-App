@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-
-
 import 'package:smart_workbench_app/widget/automationcard.dart';
 
 

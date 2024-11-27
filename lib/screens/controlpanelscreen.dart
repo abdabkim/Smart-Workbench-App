@@ -20,7 +20,7 @@ class ControlPanelScreen extends StatefulWidget {
 }
 
 class _ControlPanelScreenState extends State<ControlPanelScreen> {
-  final String baseUrl = 'http://192.168.0.9:8000/device';
+  final String baseUrl = 'http://192.168.0.10:8000/device';
   List<dynamic> devices = [];
   bool isLoading = true;
   String? authToken;
