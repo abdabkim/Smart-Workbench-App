@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:smart_workbench_app/models/automation_schedule.dart';
+import 'package:smart_workbench_app/screens/automationscreen.dart';
 
 class ControlPanelScreen extends StatefulWidget {
   final String deviceType;
@@ -29,6 +31,31 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
   void initState() {
     super.initState();
     _getAuthTokenAndFetchDevices();
+    _syncScheduleWithDeviceStatus();
+  }
+
+  Future<void> _syncScheduleWithDeviceStatus() async {
+    final schedules = await _loadSchedules();
+    final now = DateTime.now();
+
+    for (var schedule in schedules) {
+      if (schedule.days.contains(DayOfWeek.values[now.weekday - 1])) {
+        if (now.hour == schedule.timeOfDay.hour &&
+            now.minute == schedule.timeOfDay.minute) {
+          final deviceName = schedule.device.split(' (')[0];
+          final device = devices.firstWhere(
+                (d) => d['deviceName'] == deviceName,
+            orElse: () => null,
+          );
+          if (device != null) {
+            setState(() {
+              device['status'] = schedule.action;
+            });
+            await updateDeviceStatus(device['_id'], schedule.action);
+          }
+        }
+      }
+    }
   }
 
   Future<void> _getAuthTokenAndFetchDevices() async {
@@ -96,6 +123,7 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
           devices = responseData['devices'] ?? [];
           isLoading = false;
         });
+        _syncScheduleWithDeviceStatus(); // Sync after loading devices
       } else {
         throw Exception('Server returned ${response.statusCode}: ${response.body}');
       }
@@ -115,10 +143,8 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
     }
 
     try {
-      // First trigger IFTTT
       await triggerIFTTT(newStatus);
 
-      // Optimistically update UI
       setState(() {
         final deviceIndex = devices.indexWhere((d) => d['_id'] == deviceId);
         if (deviceIndex != -1) {
@@ -126,7 +152,6 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
         }
       });
 
-      // Then update the API
       final response = await http.put(
         Uri.parse('$baseUrl/update/$deviceId'),
         headers: {
@@ -141,7 +166,6 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
       if (!mounted) return;
 
       if (response.statusCode != 200) {
-        // Revert UI if update failed
         setState(() {
           final deviceIndex = devices.indexWhere((d) => d['_id'] == deviceId);
           if (deviceIndex != -1) {
@@ -181,53 +205,135 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
       );
     }
 
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: devices.length,
-      itemBuilder: (context, index) {
-        final device = devices[index];
-        final bool status = device['status'] ?? false;
+    return FutureBuilder<List<AutomationSchedule>>(
+      future: _loadSchedules(),
+      builder: (context, snapshot) {
+        final schedules = snapshot.data ?? [];
 
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 4.0),
-          color: Colors.brown.shade300,
-          child: ListTile(
-            leading: Icon(
-              Icons.power_settings_new,
-              color: status ? Colors.green : Colors.grey,
-            ),
-            title: Text(
-              device['deviceName'] ?? 'Unknown Device',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: devices.length,
+          itemBuilder: (context, index) {
+            final device = devices[index];
+            bool status = device['status'] ?? false;
+
+            // Check if there's an active schedule for this device
+            final now = DateTime.now();
+            final activeSchedule = schedules.firstWhere(
+                  (s) => s.device.startsWith(device['deviceName']) &&
+                  s.days.contains(DayOfWeek.values[now.weekday - 1]) &&
+                  now.hour == s.timeOfDay.hour &&
+                  now.minute == s.timeOfDay.minute,
+                orElse: () => schedules.first,
+            );
+
+            if (activeSchedule != null) {
+              status = activeSchedule.action;
+            }
+
+            return Card(
+              margin: const EdgeInsets.symmetric(vertical: 4.0),
+              color: Colors.brown.shade300,
+              child: ListTile(
+                leading: Icon(
+                  Icons.power_settings_new,
+                  color: status ? Colors.green : Colors.grey,
+                ),
+                title: Text(
+                  device['deviceName'] ?? 'Unknown Device',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: Text(
+                  'Power Device\n${status ? 'On' : 'Off'}',
+                  style: const TextStyle(color: Colors.white70),
+                ),
+                trailing: Switch(
+                  value: status,
+                  onChanged: (bool value) {
+                    updateDeviceStatus(device['_id'], value);
+                  },
+                  activeColor: Colors.green,
+                  inactiveTrackColor: Colors.red.shade200,
+                ),
               ),
-            ),
-            subtitle: Text(
-              'Power Device\n${status ? 'On' : 'Off'}',
-              style: const TextStyle(color: Colors.white70),
-            ),
-            trailing: Switch(
-              value: status,
-              onChanged: (bool value) {
-                updateDeviceStatus(device['_id'], value);
-              },
-              activeColor: Colors.green,
-              inactiveTrackColor: Colors.red.shade200,
-            ),
-          ),
+            );
+          },
         );
       },
     );
+  }
+
+  Widget buildScheduleCard() {
+    return Card(
+      color: Colors.brown,
+      child: FutureBuilder<List<AutomationSchedule>>(
+        future: _loadSchedules(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const ListTile(
+              title: Text('Schedule', style: TextStyle(color: Colors.white)),
+              subtitle: Text('Loading...', style: TextStyle(color: Colors.white70)),
+              trailing: Icon(Icons.schedule, color: Colors.white),
+            );
+          }
+
+          final schedules = snapshot.data ?? [];
+          final deviceSchedules = schedules.where((schedule) =>
+              devices.any((device) =>
+              "${device['deviceName']} (${device['area']})" == schedule.device
+              )
+          ).toList();
+
+          return ListTile(
+            title: const Text('Schedule', style: TextStyle(color: Colors.white)),
+            subtitle: Text(
+              deviceSchedules.isEmpty
+                  ? 'No active schedules'
+                  : '${deviceSchedules.length} active schedule(s)\n' +
+                  deviceSchedules.map((s) =>
+                  '${s.device}: ${s.getFormattedTime()} ${s.action ? 'ON' : 'OFF'}'
+                  ).join(', '),
+              style: const TextStyle(color: Colors.white70),
+            ),
+            trailing: const Icon(Icons.schedule, color: Colors.white),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AutomationScreen()),
+            ).then((_) {
+              setState(() {});
+              _syncScheduleWithDeviceStatus();
+            }),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<List<AutomationSchedule>> _loadSchedules() async {
+    final prefs = await SharedPreferences.getInstance();
+    final schedulesJson = prefs.getStringList('schedules') ?? [];
+    return schedulesJson.map((json) =>
+        AutomationSchedule.fromJson(jsonDecode(json))
+    ).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Control Panel'),
-        backgroundColor: Colors.brown.shade50,
+        title: const Text(
+          'Control Panel',
+          style: TextStyle(
+            color: Colors.brown,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
       body: RefreshIndicator(
         onRefresh: fetchDevices,
@@ -278,26 +384,7 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Card(
-                      color: Colors.brown,
-                      child: ListTile(
-                        title: const Text(
-                          'Schedule',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        subtitle: const Text(
-                          '2 active schedules',
-                          style: TextStyle(color: Colors.white70),
-                        ),
-                        trailing: const Icon(
-                          Icons.schedule,
-                          color: Colors.white,
-                        ),
-                        onTap: () {
-                          // Navigate to schedule management
-                        },
-                      ),
-                    ),
+                    buildScheduleCard(),
                   ],
                 ),
               ),
