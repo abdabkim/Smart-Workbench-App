@@ -220,13 +220,13 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
 
             // Check if there's an active schedule for this device
             final now = DateTime.now();
-            final activeSchedule = schedules.firstWhere(
+            final activeSchedule = schedules.isNotEmpty ? schedules.firstWhere(
                   (s) => s.device.startsWith(device['deviceName']) &&
                   s.days.contains(DayOfWeek.values[now.weekday - 1]) &&
                   now.hour == s.timeOfDay.hour &&
                   now.minute == s.timeOfDay.minute,
-                orElse: () => schedules.first,
-            );
+              orElse: () => schedules.first,
+            ) : null;
 
             if (activeSchedule != null) {
               status = activeSchedule.action;
