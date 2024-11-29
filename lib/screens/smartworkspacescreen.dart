@@ -403,13 +403,7 @@ class _SmartWorkspaceScreenState extends State<SmartWorkspaceScreen> {
                         icon: Icons.auto_fix_high,
                       ),
                     ),
-                    InkWell(
-                      onTap: _showHeightControl,
-                      child: const WorkspaceControlCard(
-                        title: 'Height Control',
-                        icon: Icons.height,
-                      ),
-                    ),
+
                   ],
                 ),
               ),

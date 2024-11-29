@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:smart_workbench_app/screens/notificationscreen.dart';
 import 'package:smart_workbench_app/screens/profilescreen.dart';
 import 'package:smart_workbench_app/screens/privacyscreen.dart';
 import 'package:smart_workbench_app/screens/helpsupportscreen.dart';
@@ -51,18 +50,6 @@ class SettingsScreen extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder: (context) => const ProfileScreen()),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      _buildSettingItem(
-                        context,
-                        'Notifications',
-                        Icons.notifications_none,
-                            () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const NotificationsScreen()),
                           );
                         },
                       ),

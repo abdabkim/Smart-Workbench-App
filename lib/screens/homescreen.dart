@@ -11,7 +11,7 @@ import 'package:smart_workbench_app/screens/settingsscreen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:smart_workbench_app/screens/signupscreen.dart';
-import 'package:smart_workbench_app/screens/smartplugsetupscreen.dart';
+import 'package:smart_workbench_app/screens/smartworkspacescreen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -26,6 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // Updated _pages list with required parameters for ControlPanelScreen
   final List<Widget> _pages = <Widget>[
     const DashboardScreen(),
+    const SmartWorkspaceScreen(),
     const ControlPanelScreen(
       deviceType: 'Control Panel',
       category: 'Power Device',
@@ -135,10 +136,18 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.work_outline),
+              title: const Text('Smart Workspace'),
+              onTap: () {
+                _onItemTapped(1);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.control_camera),
               title: const Text('Control Panel'),
               onTap: () {
-                _onItemTapped(1);
+                _onItemTapped(2);
                 Navigator.pop(context);
               },
             ),
@@ -146,7 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
               leading: const Icon(Icons.monitor_heart),
               title: const Text('Monitoring'),
               onTap: () {
-                _onItemTapped(2);
+                _onItemTapped(3); // Changed from 2 to 3
                 Navigator.pop(context);
               },
             ),
@@ -154,7 +163,7 @@ class _HomeScreenState extends State<HomeScreen> {
               leading: const Icon(Icons.device_hub),
               title: const Text('Automation'),
               onTap: () {
-                _onItemTapped(3);
+                _onItemTapped(4); // Changed from 3 to 4
                 Navigator.pop(context);
               },
             ),
@@ -162,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
               leading: const Icon(Icons.settings),
               title: const Text('Settings'),
               onTap: () {
-                _onItemTapped(4);
+                _onItemTapped(5); // Changed from 4 to 5
                 Navigator.pop(context);
               },
             ),
