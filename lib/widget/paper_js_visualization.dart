@@ -10,6 +10,63 @@ class PaperJsVisualization extends StatefulWidget {
 
 class _PaperJsVisualizationState extends State<PaperJsVisualization> {
   late final WebViewController _controller;
+  final TextEditingController _widthController = TextEditingController();
+  final TextEditingController _lengthController = TextEditingController();
+
+  @override
+  void dispose() {
+    _widthController.dispose();
+    _lengthController.dispose();
+    super.dispose();
+  }
+
+  void _showDimensionsDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Room Dimensions'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _widthController,
+                decoration: const InputDecoration(
+                  labelText: 'Width (in meters)',
+                  hintText: 'Enter room width',
+                ),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _lengthController,
+                decoration: const InputDecoration(
+                  labelText: 'Length (in meters)',
+                  hintText: 'Enter room length',
+                ),
+                keyboardType: TextInputType.number,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                _controller.runJavaScript(
+                  'updateRoomDimensions(${_widthController.text}, ${_lengthController.text})'
+                );
+                Navigator.pop(context);
+              },
+              child: const Text('Set Dimensions'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   void initState() {
@@ -48,10 +105,20 @@ class _PaperJsVisualizationState extends State<PaperJsVisualization> {
                 button:active {
                     background: #1976D2;
                 }
+                #dimensions {
+                    position: fixed;
+                    top: 20px;
+                    left: 20px;
+                    background: white;
+                    padding: 10px;
+                    border-radius: 4px;
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+                }
             </style>
         </head>
         <body>
             <canvas id="myCanvas" resize></canvas>
+            <div id="dimensions">Room: 0m × 0m</div>
             <div id="toolbar">
                 <button onclick="addTable()">Add Table</button>
                 <button onclick="addChair()">Add Chair</button>
@@ -59,26 +126,52 @@ class _PaperJsVisualizationState extends State<PaperJsVisualization> {
                 <button onclick="clearCanvas()">Clear</button>
             </div>
             <script type="text/javascript">
+                var roomWidth = 0;
+                var roomLength = 0;
+                var pixelsPerMeter = 100;
+
                 // Initialize Paper.js
                 paper.setup('myCanvas');
                 
-                // Create grid
+                function updateRoomDimensions(width, length) {
+                    roomWidth = parseFloat(width);
+                    roomLength = parseFloat(length);
+                    document.getElementById('dimensions').textContent = 
+                        `Room: \${roomWidth}m × \${roomLength}m`;
+                    clearCanvas();
+                }
+
+                function createRoom() {
+                    var room = new paper.Path.Rectangle({
+                        point: [50, 50],
+                        size: [roomWidth * pixelsPerMeter, roomLength * pixelsPerMeter],
+                        strokeColor: '#1976d2',
+                        strokeWidth: 2
+                    });
+                    room.sendToBack();
+                }
+
                 function createGrid(size = 20) {
-                    var grid = new paper.Group();
+                    if (roomWidth === 0 || roomLength === 0) return;
                     
-                    for (var x = 0; x < paper.view.size.width; x += size) {
+                    var grid = new paper.Group();
+                    var roomRect = new paper.Rectangle(50, 50, 
+                        roomWidth * pixelsPerMeter, 
+                        roomLength * pixelsPerMeter);
+
+                    for (var x = roomRect.left; x <= roomRect.right; x += size) {
                         var line = new paper.Path.Line(
-                            new paper.Point(x, 0),
-                            new paper.Point(x, paper.view.size.height)
+                            new paper.Point(x, roomRect.top),
+                            new paper.Point(x, roomRect.bottom)
                         );
                         line.strokeColor = '#e0e0e0';
                         grid.addChild(line);
                     }
                     
-                    for (var y = 0; y < paper.view.size.height; y += size) {
+                    for (var y = roomRect.top; y <= roomRect.bottom; y += size) {
                         var line = new paper.Path.Line(
-                            new paper.Point(0, y),
-                            new paper.Point(paper.view.size.width, y)
+                            new paper.Point(roomRect.left, y),
+                            new paper.Point(roomRect.right, y)
                         );
                         line.strokeColor = '#e0e0e0';
                         grid.addChild(line);
@@ -87,10 +180,17 @@ class _PaperJsVisualizationState extends State<PaperJsVisualization> {
                     grid.sendToBack();
                 }
 
-                // Create furniture items
+                function isInsideRoom(item) {
+                    if (roomWidth === 0 || roomLength === 0) return true;
+                    
+                    var roomBounds = new paper.Rectangle(50, 50, 
+                        roomWidth * pixelsPerMeter, 
+                        roomLength * pixelsPerMeter);
+                    return roomBounds.contains(item.bounds);
+                }
+
                 function addTable() {
                     var table = new paper.Group();
-                    
                     var top = new paper.Path.Rectangle({
                         point: [100, 100],
                         size: [120, 60],
@@ -98,14 +198,12 @@ class _PaperJsVisualizationState extends State<PaperJsVisualization> {
                     });
                     top.fillColor = '#90caf9';
                     top.strokeColor = '#1976d2';
-                    
                     table.addChild(top);
                     makeDraggable(table);
                 }
 
                 function addChair() {
                     var chair = new paper.Group();
-                    
                     var seat = new paper.Path.Rectangle({
                         point: [100, 100],
                         size: [40, 40],
@@ -128,7 +226,6 @@ class _PaperJsVisualizationState extends State<PaperJsVisualization> {
 
                 function addStorage() {
                     var storage = new paper.Group();
-                    
                     var cabinet = new paper.Path.Rectangle({
                         point: [100, 100],
                         size: [80, 120],
@@ -136,31 +233,42 @@ class _PaperJsVisualizationState extends State<PaperJsVisualization> {
                     });
                     cabinet.fillColor = '#a5d6a7';
                     cabinet.strokeColor = '#388e3c';
-                    
                     storage.addChild(cabinet);
                     makeDraggable(storage);
                 }
 
                 function makeDraggable(item) {
+                    var originalPosition;
+                    
+                    item.onMouseDown = function(event) {
+                        originalPosition = item.position;
+                    }
+                    
                     item.onMouseDrag = function(event) {
                         this.position = this.position.add(event.delta);
+                    }
+                    
+                    item.onMouseUp = function(event) {
+                        if (!isInsideRoom(item)) {
+                            item.position = originalPosition;
+                        }
                     }
                 }
 
                 function clearCanvas() {
                     paper.project.activeLayer.removeChildren();
+                    createRoom();
                     createGrid();
                 }
 
-                // Initialize grid
-                createGrid();
-                
                 // Draw view
                 paper.view.draw();
             </script>
         </body>
         </html>
       ''');
+
+    Future.delayed(Duration.zero, _showDimensionsDialog);
   }
 
   @override
@@ -168,6 +276,13 @@ class _PaperJsVisualizationState extends State<PaperJsVisualization> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Blueprint Designer'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            onPressed: _showDimensionsDialog,
+            tooltip: 'Edit Room Dimensions',
+          ),
+        ],
       ),
       body: WebViewWidget(controller: _controller),
     );

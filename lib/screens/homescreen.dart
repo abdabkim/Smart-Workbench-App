@@ -160,8 +160,8 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.device_hub),
-              title: const Text('Automation'),
+              leading: const Icon(Icons.schedule),
+              title: const Text('Schedule'),
               onTap: () {
                 _onItemTapped(4); // Changed from 3 to 4
                 Navigator.pop(context);
