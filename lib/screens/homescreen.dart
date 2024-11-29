@@ -185,22 +185,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _pages[_selectedIndex]
         ],
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.brown,
-        foregroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-        tooltip: 'Add New Device',
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const PlugInScreen(),
-            ),
-          );
-        },
-        child: const Icon(Icons.add),
-      ),
+
     );
   }
 }
