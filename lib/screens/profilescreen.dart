@@ -104,7 +104,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showPasswordChangeDialog() {
-    final currentPasswordController = TextEditingController();
+    final oldPasswordController = TextEditingController();
     final newPasswordController = TextEditingController();
     final confirmPasswordController = TextEditingController();
 
@@ -118,7 +118,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
-                  controller: currentPasswordController,
+                  controller: oldPasswordController,
                   obscureText: true,
                   decoration: const InputDecoration(
                     hintText: 'Current Password',
@@ -153,7 +153,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onPressed: () {
                 if (newPasswordController.text == confirmPasswordController.text) {
                   _updatePassword(
-                    currentPasswordController.text,
+                    oldPasswordController.text,
                     newPasswordController.text,
                   );
                 } else {
@@ -169,22 +169,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Future<void> _updatePassword(String currentPassword, String newPassword) async {
+  Future<void> _updatePassword(String oldPassword, String newPassword) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
 
+      print('Token: $token');
+      print('Old Password: $oldPassword');
+      print('New Password: $newPassword');
+
       final response = await http.put(
-        Uri.parse('http://192.168.0.10:8000/auth/update-password'),
+        Uri.parse('http://192.168.0.8:8000/auth/updatePassword'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
         body: jsonEncode({
-          'currentPassword': currentPassword,
+          'oldPassword': oldPassword,
           'newPassword': newPassword,
         }),
       );
+
+      print('Status Code: ${response.statusCode}');
+      print('Response Body: ${response.body}');
 
       if (!mounted) return;
 
@@ -194,14 +201,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
         Navigator.pop(context);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update password. Please check your current password.')),
-        );
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to update password');
       }
     } catch (e) {
+      print('Error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('An error occurred. Please try again later.')),
+        SnackBar(content: Text('Error: ${e.toString()}')),
       );
     }
   }

@@ -97,7 +97,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       print('File being sent: ${_image!.path}');
 
       final response = await dio.post(
-          "http://192.168.0.10:8000/auth/signup",
+          "http://192.168.0.8:8000/auth/signup",
           data: formData,
           options: Options(
             headers: {
@@ -381,69 +381,3 @@ class WaveClipper extends CustomClipper<Path> {
 }
 
 
-/*
- try {
-      if (_image == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select a profile photo'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      setState(() {
-        _isLoading = true;
-      });
-
-      final uri = Uri.parse('http://192.168.0.2:8000/auth/signup');
-      var request = http.MultipartRequest('POST', uri);
-
-      // Add text fields
-      request.fields['name'] = nameController.text.trim();
-      request.fields['email'] = emailController.text.trim().toLowerCase();
-      request.fields['password'] = passwordController.text;
-      request.fields['profession'] = professionController.text.trim();
-
-      request.files.add(http.MultipartFile.fromBytes('photo', File(_image!.path).readAsBytesSync(), filename: _image!.path));
-
-      var res = await request.send();
-      print(res.);
-      if (res.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Success'),
-              backgroundColor: Colors.red,
-            ));
-        saveUserData(nameController.text.trim(), emailController.text.trim().toLowerCase(), professionController.text.trim());
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Verification email sent. Please check your email.'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 5),
-          ),
-        );
-
-        await Future.delayed(const Duration(seconds: 2));
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
-
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed'),
-              backgroundColor: Colors.red,
-            ));
-      }
-    } catch (error) {
-      print(error);
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
- */

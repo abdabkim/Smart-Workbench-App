@@ -54,14 +54,8 @@ class AboutScreen extends StatelessWidget {
                       const SizedBox(height: 8),
                       _buildAboutSection(
                         'Developer',
-                        'Your Company Name',
+                        'Kimberley Mason',
                         Icons.business,
-                      ),
-                      const SizedBox(height: 8),
-                      _buildAboutSection(
-                        'Website',
-                        'www.yourwebsite.com',
-                        Icons.language,
                       ),
                       const SizedBox(height: 20),
                       const Text(
@@ -73,7 +67,7 @@ class AboutScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'Smart Workbench is an innovative application designed to help users manage and optimize their workspace efficiently. Our mission is to provide intuitive tools for better workspace organization.',
+                        'Smart Workbench is an innovative application designed to help carpenters manage and optimize their workspace efficiently. Our mission is to provide intuitive tools for better workspace organization.',
                         style: TextStyle(fontSize: 16),
                       ),
                     ],

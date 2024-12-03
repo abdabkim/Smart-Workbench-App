@@ -26,7 +26,7 @@ class _DeviceStatusScreenState extends State<DeviceStatusScreen> {
   String? deviceId;
   List<dynamic> allDevices = [];
   bool isLoading = true;
-  final String baseUrl = 'http://192.168.0.10:8000/device';
+  final String baseUrl = 'http://192.168.0.8:8000/device';
   String? authToken;
 
   @override
