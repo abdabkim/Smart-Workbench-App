@@ -170,49 +170,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _updatePassword(String oldPassword, String newPassword) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token');
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
 
-      print('Token: $token');
-      print('Old Password: $oldPassword');
-      print('New Password: $newPassword');
+    final response = await http.put(
+      Uri.parse('http://192.168.0.8:8000/auth/updatePassword'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'oldPassword': oldPassword,
+        'newPassword': newPassword,
+      }),
+    );
 
-      final response = await http.put(
-        Uri.parse('http://192.168.0.8:8000/auth/updatePassword'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode({
-          'oldPassword': oldPassword,
-          'newPassword': newPassword,
-        }),
-      );
+    if (!mounted) return;
 
-      print('Status Code: ${response.statusCode}');
-      print('Response Body: ${response.body}');
-
-      if (!mounted) return;
-
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Password updated successfully')),
-        );
-        Navigator.pop(context);
-      } else {
-        final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to update password');
-      }
-    } catch (e) {
-      print('Error: $e');
-      if (!mounted) return;
+    if (response.statusCode == 200) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
+        const SnackBar(content: Text('Password updated successfully')),
+      );
+      Navigator.pop(context);
+    } else {
+      final errorData = jsonDecode(response.body);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(errorData['message'] ?? 'Failed to update password')),
       );
     }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
