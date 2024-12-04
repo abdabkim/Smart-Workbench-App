@@ -80,9 +80,6 @@ class _DeviceStatusScreenState extends State<DeviceStatusScreen> {
         headers: _headers,
       );
 
-      print('Load all devices response: ${response.statusCode}');
-      print('Response body: ${response.body}');
-
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         setState(() {
@@ -116,16 +113,11 @@ class _DeviceStatusScreenState extends State<DeviceStatusScreen> {
         'status': false,
       };
 
-      print('Creating new device: $deviceData');
-
       final response = await http.post(
         Uri.parse('$baseUrl/new'),
         headers: _headers,
         body: json.encode(deviceData),
       );
-
-      print('Create device response: ${response.statusCode}');
-      print('Response body: ${response.body}');
 
       if (response.statusCode == 201) {
         final data = json.decode(response.body);
@@ -134,23 +126,36 @@ class _DeviceStatusScreenState extends State<DeviceStatusScreen> {
           isDeviceOn = false;
         });
         await _loadAllDevices();
-      } else {
-        print('Failed to create device: ${response.statusCode}');
       }
     } catch (e) {
       print('Error creating device: $e');
     }
   }
 
+  Future<void> triggerIFTTT(bool newStatus) async {
+    final url = newStatus
+        ? 'https://maker.ifttt.com/trigger/turn_on_devices/with/key/2ZySHZZprglWIony9x0DF'
+        : 'https://maker.ifttt.com/trigger/turn_off_device/with/key/2ZySHZZprglWIony9x0DF';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode != 200) {
+        throw Exception('Failed to trigger IFTTT');
+      }
+    } catch (e) {
+      print('Error triggering IFTTT: $e');
+    }
+  }
+
   Future<void> _updateDeviceStatus(String id, bool newStatus) async {
     try {
+      await triggerIFTTT(newStatus);
+
       final response = await http.put(
         Uri.parse('$baseUrl/update/$id'),
         headers: _headers,
-        body: json.encode({'status': newStatus.toString()}), // Keep status as string
+        body: json.encode({'status': newStatus.toString()}),
       );
-
-      print('Update status response: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         setState(() {
@@ -173,18 +178,17 @@ class _DeviceStatusScreenState extends State<DeviceStatusScreen> {
         headers: _headers,
       );
 
-      print('Delete device response: ${response.statusCode}');
-
       if (response.statusCode == 200) {
         setState(() {
           allDevices.removeWhere((device) => device['_id'] == id);
         });
+      } else {
+        print('Failed to delete device: ${response.statusCode}');
       }
     } catch (e) {
       print('Error deleting device: $e');
     }
   }
-// [Previous imports and class definition remain the same until _buildStatusCard]
 
   Widget _buildStatusCard(Map<String, dynamic> device) {
     final bool status = device['status'] ?? false;
@@ -298,8 +302,6 @@ class _DeviceStatusScreenState extends State<DeviceStatusScreen> {
       ),
     );
   }
-
-// [Rest of the code remains the same]
 
   @override
   Widget build(BuildContext context) {
