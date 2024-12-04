@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:io';
-import 'package:image_picker/image_picker.dart';
+import 'package:smart_workbench_app/screens/loginscreen.dart'; // Update this import with your login screen path
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -16,8 +15,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String userName = '';
   String userEmail = '';
   String profession = '';
-  File? _imageFile;
-  final ImagePicker _picker = ImagePicker();
+  String? profileImageUrl;
 
   @override
   void initState() {
@@ -28,77 +26,106 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
-    final email = prefs.getString('email');
-    final name = prefs.getString('name');
-    final profession = prefs.getString('profession');
 
+    // First load the stored user data
     setState(() {
-      userName = name ?? '';
-      userEmail = email ?? '';
-      this.profession = profession ?? '';
+      userName = prefs.getString('name') ?? '';
+      userEmail = prefs.getString('email') ?? '';
+      profession = prefs.getString('profession') ?? '';
     });
-  }
 
-  Future<void> _pickImage() async {
+    // Then fetch the user profile including the image URL
     try {
-      final XFile? pickedFile = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1000,
-        maxHeight: 1000,
-        imageQuality: 85,
+      final response = await http.get(
+        Uri.parse('http://192.168.0.8:8000/auth/getuser'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
       );
 
-      if (pickedFile != null) {
+      if (response.statusCode == 200) {
+        final userData = json.decode(response.body);
         setState(() {
-          _imageFile = File(pickedFile.path);
+          // Construct the full image URL
+          if (userData['photo'] != null) {
+            profileImageUrl = 'http://192.168.0.8:8000/uploads/${userData['photo']}';
+          }
         });
-
-        await _uploadImage(_imageFile!);
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to pick image')),
+        const SnackBar(content: Text('Failed to load profile data')),
       );
     }
   }
 
-  Future<void> _uploadImage(File imageFile) async {
+  Future<void> _deleteAccount() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token');
-
-      var request = http.MultipartRequest(
-        'PUT',
-        Uri.parse('http://192.168.0.10:8000/auth/update-profile-picture'),
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Delete Account'),
+            content: const Text(
+              'Are you sure you want to delete your account? This action cannot be undone.',
+              style: TextStyle(color: Colors.red),
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('Cancel'),
+                onPressed: () => Navigator.of(context).pop(false),
+              ),
+              TextButton(
+                child: const Text(
+                  'Delete',
+                  style: TextStyle(color: Colors.red),
+                ),
+                onPressed: () => Navigator.of(context).pop(true),
+              ),
+            ],
+          );
+        },
       );
 
-      request.headers.addAll({
-        'Authorization': 'Bearer $token',
-      });
+      if (confirm == true) {
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('token');
 
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'profilePicture',
-          imageFile.path,
-        ),
-      );
-
-      var response = await request.send();
-
-      if (!mounted) return;
-
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile picture updated successfully')),
+        final response = await http.delete(
+          Uri.parse('http://192.168.0.8:8000/auth/delete'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
         );
-      } else {
-        throw Exception('Failed to upload image');
+
+        if (!mounted) return;
+
+        if (response.statusCode == 200) {
+          // Clear all stored data
+          await prefs.clear();
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Account deleted successfully')),
+          );
+
+          // Navigate to login screen and remove all previous routes
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const LoginScreen()),
+                (Route<dynamic> route) => false,
+          );
+        } else {
+          throw Exception('Failed to delete account');
+        }
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to upload image')),
+        const SnackBar(
+          content: Text('Failed to delete account'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -174,7 +201,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final token = prefs.getString('token');
 
     final response = await http.put(
-      Uri.parse('http://192.168.0.8:8000/auth/updatePassword'),
+      Uri.parse('http://192.168.0.8:8000/auth/updatepassword'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
@@ -199,6 +226,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -221,59 +249,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 20),
               // Profile Image Section
               Center(
-                child: Stack(
-                  children: [
-                    Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: const Color(0xFFCB8E7C),
-                          width: 3,
-                        ),
-                      ),
-                      child: ClipOval(
-                        child: _imageFile != null
-                            ? Image.file(
-                          _imageFile!,
-                          fit: BoxFit.cover,
-                          width: 120,
-                          height: 120,
-                        )
-                            : Image.asset(
-                          'assets/female_avatar.jpg',
-                          fit: BoxFit.cover,
-                        ),
-                      ),
+                child: Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFFCB8E7C),
+                      width: 3,
                     ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        width: 35,
-                        height: 35,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFCB8E7C),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white,
-                            width: 2,
+                  ),
+                  child: ClipOval(
+                    child: profileImageUrl != null
+                        ? Image.network(
+                      profileImageUrl!,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Center(
+                          child: CircularProgressIndicator(
+                            value: loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded /
+                                loadingProgress.expectedTotalBytes!
+                                : null,
                           ),
-                        ),
-                        child: IconButton(
-                          padding: EdgeInsets.zero,
-                          icon: const Icon(
-                            Icons.camera_alt,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                          onPressed: _pickImage,
-                        ),
-                      ),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(
+                          Icons.person,
+                          size: 60,
+                          color: Colors.grey,
+                        );
+                      },
+                    )
+                        : Image.asset(
+                      'assets/female_avatar.jpg',
+                      fit: BoxFit.cover,
                     ),
-                  ],
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -316,16 +331,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         subtitle: Text(profession),
                       ),
                       const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.brown,
-                            foregroundColor: Colors.white,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.brown,
+                                foregroundColor: Colors.white,
+                              ),
+                              onPressed: _showPasswordChangeDialog,
+                              child: const Text('Reset Password'),
+                            ),
                           ),
-                          onPressed: _showPasswordChangeDialog,
-                          child: const Text('Reset Password'),
-                        ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.red,
+                                foregroundColor: Colors.white,
+                              ),
+                              onPressed: _deleteAccount,
+                              child: const Text('Delete Account'),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
