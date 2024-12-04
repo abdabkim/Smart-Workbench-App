@@ -48,6 +48,7 @@ class WelcomeScreen extends StatelessWidget {
                 // Welcome text
                 const Text(
                   'Welcome Home to Smart Workbench',
+                  textAlign: TextAlign.center,  // Add this line
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,

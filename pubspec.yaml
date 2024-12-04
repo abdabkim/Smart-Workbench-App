@@ -46,7 +46,6 @@ dependencies:
   dio: ^5.7.0
   file_picker: ^8.1.4
   js: ^0.6.7
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
