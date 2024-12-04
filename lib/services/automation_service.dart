@@ -103,19 +103,20 @@ class AutomationService {
             ),
             iOS: const DarwinNotificationDetails(),
           ),
-          androidAllowWhileIdle: true,
           uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
           matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
           payload: json.encode({
             'deviceId': deviceName,
             'action': schedule.action,
           }),
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         );
       }
     } catch (e) {
       print('Error in scheduleAutomation: $e');
     }
   }
+
   static bool _isScheduledTime(DateTime now, TimeOfDay scheduledTime) {
     return now.hour == scheduledTime.hour && now.minute == scheduledTime.minute;
   }
