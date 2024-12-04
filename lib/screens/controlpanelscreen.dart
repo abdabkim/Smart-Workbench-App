@@ -339,7 +339,7 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
                                     TextButton(
                                       onPressed: () {
                                         _deleteDevice(device['_id']);
-                                        Navigator.pop(context);
+                                        Navigator.pop(context); // Only close dialog
                                       },
                                       style: TextButton.styleFrom(
                                         foregroundColor: Colors.red,
