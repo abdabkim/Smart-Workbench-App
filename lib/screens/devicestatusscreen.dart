@@ -147,7 +147,7 @@ class _DeviceStatusScreenState extends State<DeviceStatusScreen> {
       final response = await http.put(
         Uri.parse('$baseUrl/update/$id'),
         headers: _headers,
-        body: json.encode({'status': newStatus}),
+        body: json.encode({'status': newStatus.toString()}), // Keep status as string
       );
 
       print('Update status response: ${response.statusCode}');
@@ -166,14 +166,36 @@ class _DeviceStatusScreenState extends State<DeviceStatusScreen> {
     }
   }
 
+  Future<void> _deleteDevice(String id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/delete/$id'),
+        headers: _headers,
+      );
+
+      print('Delete device response: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        setState(() {
+          allDevices.removeWhere((device) => device['_id'] == id);
+        });
+      }
+    } catch (e) {
+      print('Error deleting device: $e');
+    }
+  }
+// [Previous imports and class definition remain the same until _buildStatusCard]
+
   Widget _buildStatusCard(Map<String, dynamic> device) {
+    final bool status = device['status'] ?? false;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.brown.shade200.withOpacity(0.7),
+        color: Colors.brown.shade400,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.brown.shade300,
+          color: Colors.brown.shade500,
           width: 1,
         ),
       ),
@@ -191,14 +213,15 @@ class _DeviceStatusScreenState extends State<DeviceStatusScreen> {
                     padding: const EdgeInsets.only(left: 8.0),
                     child: Icon(
                       Icons.power_settings_new,
-                      color: Colors.brown.shade900,
+                      color: status ? Colors.green : Colors.red,
+                      size: 24,
                     ),
                   ),
                   Switch(
-                    value: device['status'] ?? false,
+                    value: status,
                     onChanged: (value) => _updateDeviceStatus(device['_id'], value),
-                    activeColor: Colors.brown.shade700,
-                    activeTrackColor: Colors.brown.shade300,
+                    activeColor: Colors.green,
+                    inactiveTrackColor: Colors.red.shade200,
                   ),
                 ],
               ),
@@ -212,7 +235,7 @@ class _DeviceStatusScreenState extends State<DeviceStatusScreen> {
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -220,16 +243,50 @@ class _DeviceStatusScreenState extends State<DeviceStatusScreen> {
                       device['area'] ?? '',
                       style: const TextStyle(
                         fontSize: 14,
-                        color: Colors.black54,
+                        color: Colors.white70,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      (device['status'] ?? false) ? 'On' : 'Off',
+                      status ? 'On' : 'Off',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: (device['status'] ?? false) ? Colors.green : Colors.red,
+                        color: status ? Colors.green : Colors.red,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton.icon(
+                      onPressed: () => showDialog(
+                        context: context,
+                        builder: (BuildContext context) => AlertDialog(
+                          title: const Text('Delete Device'),
+                          content: const Text('Are you sure you want to delete this device?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                _deleteDevice(device['_id']);
+                                Navigator.pop(context);
+                              },
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.red,
+                              ),
+                              child: const Text('Delete'),
+                            ),
+                          ],
+                        ),
+                      ),
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      label: const Text(
+                        'Delete Device',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
                       ),
                     ),
                   ],
@@ -241,6 +298,8 @@ class _DeviceStatusScreenState extends State<DeviceStatusScreen> {
       ),
     );
   }
+
+// [Rest of the code remains the same]
 
   @override
   Widget build(BuildContext context) {
@@ -259,103 +318,103 @@ class _DeviceStatusScreenState extends State<DeviceStatusScreen> {
       backgroundColor: Colors.brown.shade50,
       appBar: AppBar(
         title: const Text('Device Status'),
-        backgroundColor: Colors.brown.shade50,
+        backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.brown.shade50,
-              Colors.brown.shade100,
-            ],
+      body: Stack(
+        children: [
+          Image.asset(
+            'assets/bg.jpg',
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
           ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'All Devices (${allDevices.length})',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.brown.shade900,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Status',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.brown.shade700,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: allDevices.isEmpty
-                      ? Center(
-                    child: Text(
-                      'No devices added yet',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.brown.shade400,
-                      ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'All Devices (${allDevices.length})',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.brown.shade900,
                     ),
-                  )
-                      : ListView.builder(
-                    itemCount: allDevices.length,
-                    itemBuilder: (context, index) {
-                      return _buildStatusCard(allDevices[index]);
-                    },
                   ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ControlPanelScreen(
-                            deviceType: widget.deviceType,
-                            category: widget.category,
-                            area: widget.area,
+                  const SizedBox(height: 8),
+                  Text(
+                    'Status',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.brown.shade700,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: allDevices.isEmpty
+                        ? Center(
+                      child: Text(
+                        'No devices added yet',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.brown.shade400,
+                        ),
+                      ),
+                    )
+                        : ListView.builder(
+                      itemCount: allDevices.length,
+                      itemBuilder: (context, index) {
+                        return _buildStatusCard(allDevices[index]);
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ControlPanelScreen(
+                              deviceType: widget.deviceType,
+                              category: widget.category,
+                              area: widget.area,
+                            ),
                           ),
                         ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.brown,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      ),
-                      child: const Text('Control Panel'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => HomeScreen(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.brown,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
                         ),
+                        child: const Text('Control Panel'),
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.brown.shade600,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      ElevatedButton(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => HomeScreen(),
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.brown.shade600,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 12),
+                        ),
+                        child: const Text('Home'),
                       ),
-                      child: const Text('Home'),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

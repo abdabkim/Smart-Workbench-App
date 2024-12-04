@@ -81,6 +81,31 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
     );
   }
 
+  Future<void> _deleteDevice(String id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/delete/$id'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $authToken',
+        },
+      );
+
+      print('Delete device response: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        setState(() {
+          devices.removeWhere((device) => device['_id'] == id);
+        });
+      } else {
+        throw Exception('Failed to delete device');
+      }
+    } catch (e) {
+      print('Error deleting device: $e');
+      _showError('Failed to delete device: $e');
+    }
+  }
+
   Future<void> triggerIFTTT(bool newStatus) async {
     final url = newStatus
         ? 'https://maker.ifttt.com/trigger/turn_on_devices/with/key/2ZySHZZprglWIony9x0DF'
@@ -123,7 +148,7 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
           devices = responseData['devices'] ?? [];
           isLoading = false;
         });
-        _syncScheduleWithDeviceStatus(); // Sync after loading devices
+        _syncScheduleWithDeviceStatus();
       } else {
         throw Exception('Server returned ${response.statusCode}: ${response.body}');
       }
@@ -218,7 +243,6 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
             final device = devices[index];
             bool status = device['status'] ?? false;
 
-            // Check if there's an active schedule for this device
             final now = DateTime.now();
             final activeSchedule = schedules.isNotEmpty ? schedules.firstWhere(
                   (s) => s.device.startsWith(device['deviceName']) &&
@@ -232,32 +256,113 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
               status = activeSchedule.action;
             }
 
-            return Card(
-              margin: const EdgeInsets.symmetric(vertical: 4.0),
-              color: Colors.brown.shade300,
-              child: ListTile(
-                leading: Icon(
-                  Icons.power_settings_new,
-                  color: status ? Colors.green : Colors.grey,
+            return Container(
+              margin: const EdgeInsets.symmetric(vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.brown.shade400,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.brown.shade500,
+                  width: 1,
                 ),
-                title: Text(
-                  device['deviceName'] ?? 'Unknown Device',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
+                            child: Icon(
+                              Icons.power_settings_new,
+                              color: status ? Colors.green : Colors.red,
+                              size: 24,
+                            ),
+                          ),
+                          Switch(
+                            value: status,
+                            onChanged: (bool value) {
+                              updateDeviceStatus(device['_id'], value);
+                            },
+                            activeColor: Colors.green,
+                            inactiveTrackColor: Colors.red.shade200,
+                          ),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              device['deviceName'] ?? '',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Power Device',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.white70,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              status ? 'On' : 'Off',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: status ? Colors.green : Colors.red,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextButton.icon(
+                              onPressed: () => showDialog(
+                                context: context,
+                                builder: (BuildContext context) => AlertDialog(
+                                  title: const Text('Delete Device'),
+                                  content: const Text('Are you sure you want to delete this device?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        _deleteDevice(device['_id']);
+                                        Navigator.pop(context);
+                                      },
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: Colors.red,
+                                      ),
+                                      child: const Text('Delete'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              label: const Text(
+                                'Delete Device',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                subtitle: Text(
-                  'Power Device\n${status ? 'On' : 'Off'}',
-                  style: const TextStyle(color: Colors.white70),
-                ),
-                trailing: Switch(
-                  value: status,
-                  onChanged: (bool value) {
-                    updateDeviceStatus(device['_id'], value);
-                  },
-                  activeColor: Colors.green,
-                  inactiveTrackColor: Colors.red.shade200,
                 ),
               ),
             );
@@ -266,6 +371,8 @@ class _ControlPanelScreenState extends State<ControlPanelScreen> {
       },
     );
   }
+
+
 
   Widget buildScheduleCard() {
     return Card(
