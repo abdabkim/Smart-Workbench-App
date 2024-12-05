@@ -1,4 +1,3 @@
-// automationscreen.dart
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -7,6 +6,7 @@ import 'package:smart_workbench_app/models/automation_schedule.dart';
 import 'package:smart_workbench_app/services/automation_service.dart';
 import 'package:http/http.dart' as http;
 
+// First Widget: AutomationScreen
 class AutomationScreen extends StatefulWidget {
   const AutomationScreen({Key? key}) : super(key: key);
 
@@ -15,132 +15,224 @@ class AutomationScreen extends StatefulWidget {
 }
 
 class _AutomationScreenState extends State<AutomationScreen> {
-  final List<AutomationSchedule> _schedules = [];
+  final String baseUrl = 'http://192.168.0.8:8000/device';
+  List<AutomationSchedule> _schedules = [];
   List<dynamic> allDevices = [];
   bool isLoading = true;
   String? authToken;
+  Timer? _deviceRefreshTimer;
+
   @override
   void initState() {
     super.initState();
-    _loadSchedules();
-    _loadDevices();
+    _loadInitialData();
+    // Set up periodic device refresh
+    _deviceRefreshTimer = Timer.periodic(
+      const Duration(seconds: 5),
+          (_) => _refreshDevices(),
+    );
   }
 
-  Future<void> _loadDevices() async {
-    final prefs = await SharedPreferences.getInstance();
-    authToken = prefs.getString('token');
+  @override
+  void dispose() {
+    _deviceRefreshTimer?.cancel();
+    super.dispose();
+  }
 
-    if (authToken == null) {
-      setState(() => isLoading = false);
-      return;
+  Future<void> _loadInitialData() async {
+    try {
+      // Get token first
+      final prefs = await SharedPreferences.getInstance();
+      authToken = prefs.getString('token');
+
+      if (authToken == null) {
+        if (mounted) {
+          setState(() {
+            isLoading = false;
+          });
+          _showError('Authentication token not found');
+        }
+        return;
+      }
+
+      // Load devices and schedules
+      await Future.wait([
+        _refreshDevices(),
+        _loadSchedules(),
+      ]);
+
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error in initial load: $e');
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+        _showError('Failed to load data');
+      }
     }
+  }
+
+  Future<void> _refreshDevices() async {
+    if (!mounted || authToken == null) return;
 
     try {
+      print('Refreshing devices...'); // Debug print
       final response = await http.get(
-        Uri.parse('http://192.168.0.10:8000/device/retrieveall'),
+        Uri.parse('$baseUrl/retrieveall'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $authToken',
         },
       );
 
+      print('Response status: ${response.statusCode}'); // Debug print
+      print('Response body: ${response.body}'); // Debug print
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        setState(() {
-          allDevices = List.from(data['devices'] ?? []);
-          isLoading = false;
-        });
+        final devices = List.from(data['devices'] ?? []);
+
+        if (mounted) {
+          setState(() {
+            allDevices = devices;
+          });
+        }
+        print('Devices loaded: ${devices.length}'); // Debug print
+      } else {
+        print('Error loading devices: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error loading devices: $e');
-      setState(() => isLoading = false);
+      print('Error refreshing devices: $e');
     }
   }
 
   Future<void> _loadSchedules() async {
-    final prefs = await SharedPreferences.getInstance();
-    final schedulesJson = prefs.getStringList('schedules') ?? [];
-    setState(() {
-      _schedules.clear();
-      _schedules.addAll(
-        schedulesJson.map((json) => AutomationSchedule.fromJson(jsonDecode(json))),
-      );
-    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final schedulesJson = prefs.getStringList('schedules') ?? [];
+
+      if (mounted) {
+        setState(() {
+          _schedules = schedulesJson
+              .map((json) => AutomationSchedule.fromJson(jsonDecode(json)))
+              .toList();
+        });
+      }
+    } catch (e) {
+      print('Error loading schedules: $e');
+    }
   }
 
   Future<void> _saveSchedules() async {
-    final prefs = await SharedPreferences.getInstance();
-    final schedulesJson = _schedules
-        .map((schedule) => jsonEncode(schedule.toJson()))
-        .toList();
-    await prefs.setStringList('schedules', schedulesJson);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final schedulesJson = _schedules
+          .map((schedule) => jsonEncode(schedule.toJson()))
+          .toList();
+      await prefs.setStringList('schedules', schedulesJson);
+    } catch (e) {
+      print('Error saving schedules: $e');
+      _showError('Failed to save schedule');
+    }
   }
 
-  void _deleteSchedule(AutomationSchedule schedule) {
-    setState(() {
-      _schedules.remove(schedule);
-    });
-    _saveSchedules();
-  }
-
-  void _editSchedule(AutomationSchedule schedule) {
-    showDialog(
-      context: context,
-      builder: (context) => ScheduleDialog(
-        schedule: schedule,
-        devices: allDevices.map((device) =>
-        "${device['deviceName']} (${device['area']})").toList(),
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
       ),
-    ).then((updatedSchedule) {
-      if (updatedSchedule != null) {
-        final index = _schedules.indexOf(schedule);
-        setState(() {
-          _schedules[index] = updatedSchedule;
-        });
-        _saveSchedules();
-        AutomationService.scheduleAutomation(updatedSchedule);
-      }
-    });
+    );
   }
 
   void _addSchedule() {
     if (allDevices.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No devices available. Please add devices first.')),
-      );
+      _showError('No devices available. Please check your connection.');
+      _refreshDevices(); // Try to refresh devices when adding schedule
       return;
     }
 
     showDialog(
       context: context,
-      builder: (context) => ScheduleDialog(
-        devices: allDevices.map((device) =>
-        "${device['deviceName']} (${device['area']})").toList(),
+      builder: (context) => _ScheduleDialog(
+        devices: allDevices
+            .map((device) => "${device['deviceName']} (${device['area']})")
+            .toList(),
       ),
-    ).then((schedule) {
-      if (schedule != null) {
+    ).then((schedule) async {
+      if (schedule != null && mounted) {
         setState(() {
           _schedules.add(schedule);
         });
-        _saveSchedules();
-        AutomationService.scheduleAutomation(schedule);
+        await _saveSchedules();
       }
     });
   }
 
-  void _toggleSchedule(AutomationSchedule schedule) {
+  Future<void> _deleteSchedule(AutomationSchedule schedule) async {
+    setState(() {
+      _schedules.remove(schedule);
+    });
+    await _saveSchedules();
+  }
+
+  void _editSchedule(AutomationSchedule schedule) {
+    if (allDevices.isEmpty) {
+      _showError('No devices available. Please check your connection.');
+      _refreshDevices(); // Try to refresh devices when editing schedule
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => _ScheduleDialog(
+        schedule: schedule,
+        devices: allDevices
+            .map((device) => "${device['deviceName']} (${device['area']})")
+            .toList(),
+      ),
+    ).then((updatedSchedule) async {
+      if (updatedSchedule != null && mounted) {
+        final index = _schedules.indexOf(schedule);
+        setState(() {
+          _schedules[index] = updatedSchedule;
+        });
+        await _saveSchedules();
+      }
+    });
+  }
+
+  void _toggleSchedule(AutomationSchedule schedule) async {
     final index = _schedules.indexOf(schedule);
     final updatedSchedule = schedule.copyWith(action: !schedule.action);
     setState(() {
       _schedules[index] = updatedSchedule;
     });
-    _saveSchedules();
+    await _saveSchedules();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        title: const Text(
+          'Schedule',
+          style: TextStyle(
+            color: Colors.brown,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
@@ -151,20 +243,44 @@ class _AutomationScreenState extends State<AutomationScreen> {
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Column(
+            child: isLoading
+                ? const Center(child: CircularProgressIndicator(color: Colors.brown))
+                : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Schedules',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.brown,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Schedules',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.brown,
+                      ),
+                    ),
+                    Text(
+                      'Devices: ${allDevices.length}',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.brown,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 20),
                 Expanded(
-                  child: ListView.builder(
+                  child: _schedules.isEmpty
+                      ? const Center(
+                    child: Text(
+                      'No schedules yet',
+                      style: TextStyle(
+                        color: Colors.brown,
+                        fontSize: 18,
+                      ),
+                    ),
+                  )
+                      : ListView.builder(
                     itemCount: _schedules.length,
                     itemBuilder: (context, index) {
                       final schedule = _schedules[index];
@@ -179,33 +295,48 @@ class _AutomationScreenState extends State<AutomationScreen> {
                           child: Padding(
                             padding: const EdgeInsets.all(16.0),
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              crossAxisAlignment:
+                              CrossAxisAlignment.start,
                               children: [
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                  MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(
-                                      schedule.name,
-                                      style: const TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
+                                    Expanded(
+                                      child: Text(
+                                        schedule.name,
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                        overflow:
+                                        TextOverflow.ellipsis,
                                       ),
                                     ),
                                     Row(
                                       children: [
                                         Switch(
                                           value: schedule.action,
-                                          onChanged: (_) => _toggleSchedule(schedule),
+                                          onChanged: (_) =>
+                                              _toggleSchedule(
+                                                  schedule),
                                           activeColor: Colors.white,
                                         ),
                                         IconButton(
-                                          icon: const Icon(Icons.edit, color: Colors.white70),
-                                          onPressed: () => _editSchedule(schedule),
+                                          icon: const Icon(
+                                              Icons.edit,
+                                              color: Colors.white70),
+                                          onPressed: () =>
+                                              _editSchedule(schedule),
                                         ),
                                         IconButton(
-                                          icon: const Icon(Icons.delete, color: Colors.white70),
-                                          onPressed: () => _deleteSchedule(schedule),
+                                          icon: const Icon(
+                                              Icons.delete,
+                                              color: Colors.white70),
+                                          onPressed: () =>
+                                              _deleteSchedule(
+                                                  schedule),
                                         ),
                                       ],
                                     ),
@@ -266,23 +397,24 @@ class _AutomationScreenState extends State<AutomationScreen> {
     );
   }
 }
-// schedule_dialog.dart
 
-class ScheduleDialog extends StatefulWidget {
+
+// Second Widget: Schedule Dialog
+class _ScheduleDialog extends StatefulWidget {
   final List<String> devices;
   final AutomationSchedule? schedule;
 
-  const ScheduleDialog({
+  const _ScheduleDialog({
     Key? key,
     required this.devices,
     this.schedule,
   }) : super(key: key);
 
   @override
-  _ScheduleDialogState createState() => _ScheduleDialogState();
+  State<_ScheduleDialog> createState() => _ScheduleDialogState();
 }
 
-class _ScheduleDialogState extends State<ScheduleDialog> {
+class _ScheduleDialogState extends State<_ScheduleDialog> {
   late TextEditingController _nameController;
   late String _selectedDevice;
   late Set<DayOfWeek> _selectedDays;
@@ -297,6 +429,12 @@ class _ScheduleDialogState extends State<ScheduleDialog> {
     _selectedDays = widget.schedule?.days ?? {DayOfWeek.monday};
     _selectedTime = widget.schedule?.timeOfDay ?? TimeOfDay.now();
     _action = widget.schedule?.action ?? true;
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
   }
 
   @override
@@ -404,19 +542,4 @@ class _ScheduleDialogState extends State<ScheduleDialog> {
       ],
     );
   }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
 }
-
-
-// extensions.dart
-extension StringExtension on String {
-  String capitalize() {
-    return "${this[0].toUpperCase()}${substring(1)}";
-  }
-}
-
