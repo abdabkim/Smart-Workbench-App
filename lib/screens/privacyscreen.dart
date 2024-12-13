@@ -48,7 +48,7 @@ class PrivacyScreen extends StatelessWidget {
                     children: [
                       _buildPrivacySection(
                         'Data Collection',
-                        'Information about how we collect and use your data',
+                        'Your data is secure and encrypted.',
                         Icons.data_usage,
                       ),
                       const SizedBox(height: 8),

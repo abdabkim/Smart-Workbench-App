@@ -3,7 +3,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:async';
 import 'package:smart_workbench_app/models/automation_schedule.dart';
-import 'package:smart_workbench_app/services/automation_service.dart';
 import 'package:http/http.dart' as http;
 
 // First Widget: AutomationScreen
@@ -15,7 +14,7 @@ class AutomationScreen extends StatefulWidget {
 }
 
 class _AutomationScreenState extends State<AutomationScreen> {
-  final String baseUrl = 'http://192.168.0.8:8000/device';
+  final String baseUrl = 'http://192.168.0.3:8000/device';
   List<AutomationSchedule> _schedules = [];
   List<dynamic> allDevices = [];
   bool isLoading = true;

@@ -97,7 +97,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       print('File being sent: ${_image!.path}');
 
       final response = await dio.post(
-          "http://192.168.0.8:8000/auth/signup",
+          "http://192.168.0.3:8000/auth/signup",
           data: formData,
           options: Options(
             headers: {

@@ -19,7 +19,7 @@ class SmartWorkspaceScreen extends StatefulWidget {
 class _SmartWorkspaceScreenState extends State<SmartWorkspaceScreen> {
   bool _isAutomationEnabled = false;
   List<Map<String, dynamic>> connectedDevices = [];
-  final String baseUrl = 'http://192.168.0.8:8000/device';
+  final String baseUrl = 'http://192.168.0.3:8000/device';
   final String webhookUrlOn = 'https://maker.ifttt.com/trigger/turn_on_devices/with/key/2ZySHZZprglWIony9x0DF';
   final String webhookUrlOff = 'https://maker.ifttt.com/trigger/turn_off_device/with/key/2ZySHZZprglWIony9x0DF';
   String? authToken;
