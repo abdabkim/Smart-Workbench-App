@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -7,7 +6,6 @@ import 'package:smart_workbench_app/widget/workspacecontrolcard.dart';
 import 'package:smart_workbench_app/widget/paper_js_visualization.dart';
 import 'package:smart_workbench_app/widget/two_js_visualization.dart';
 import 'dart:async';
-
 
 class SmartWorkspaceScreen extends StatefulWidget {
   const SmartWorkspaceScreen({super.key});
@@ -19,7 +17,7 @@ class SmartWorkspaceScreen extends StatefulWidget {
 class _SmartWorkspaceScreenState extends State<SmartWorkspaceScreen> {
   bool _isAutomationEnabled = false;
   List<Map<String, dynamic>> connectedDevices = [];
-  final String baseUrl = 'http://192.168.0.3:8000/device';
+  final String baseUrl = 'http://192.168.0.11:8000/device';
   final String webhookUrlOn = 'https://maker.ifttt.com/trigger/turn_on_devices/with/key/2ZySHZZprglWIony9x0DF';
   final String webhookUrlOff = 'https://maker.ifttt.com/trigger/turn_off_device/with/key/2ZySHZZprglWIony9x0DF';
   String? authToken;
@@ -47,12 +45,53 @@ class _SmartWorkspaceScreenState extends State<SmartWorkspaceScreen> {
           final data = json.decode(response.body);
           setState(() {
             connectedDevices = List<Map<String, dynamic>>.from(data['devices']);
+            _isAutomationEnabled = connectedDevices.isNotEmpty &&
+                connectedDevices.every((device) => device['status'] == true);
           });
         }
       } catch (e) {
         print('Error loading devices: $e');
       }
     }
+  }
+
+  Future<void> _toggleAllDevices(bool turnOn) async {
+    // First update all devices in backend
+    for (var device in connectedDevices) {
+      try {
+        final response = await http.put(
+          Uri.parse('$baseUrl/update/${device['_id']}'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $authToken',
+          },
+          body: json.encode({'status': turnOn}),
+        );
+
+        if (response.statusCode == 200) {
+          device['status'] = turnOn;
+        }
+      } catch (e) {
+        print('Error updating device: $e');
+      }
+    }
+
+    // Then trigger IFTTT
+    try {
+      await http.post(Uri.parse(turnOn ? webhookUrlOn : webhookUrlOff));
+    } catch (e) {
+      print('IFTTT Error: $e');
+    }
+
+    // Update local state
+    if (mounted) {
+      setState(() {
+        _isAutomationEnabled = turnOn;
+      });
+    }
+
+    // Refresh devices
+    await _loadDevices();
   }
 
   void _showPaperJsVisualization() {
@@ -71,49 +110,12 @@ class _SmartWorkspaceScreenState extends State<SmartWorkspaceScreen> {
     );
   }
 
-  Future<void> _toggleAllDevices(bool turnOn) async {
-    try {
-      final response = await http.post(
-        Uri.parse(turnOn ? webhookUrlOn : webhookUrlOff),
-      );
-
-      if (response.statusCode == 200) {
-        setState(() {
-          _isAutomationEnabled = turnOn;
-          for (var device in connectedDevices) {
-            device['status'] = turnOn;
-          }
-        });
-        _updateDevicesStatus(turnOn);
-      }
-    } catch (e) {
-      print('Failed to toggle devices: $e');
-    }
-  }
-
-  Future<void> _updateDevicesStatus(bool status) async {
-    for (var device in connectedDevices) {
-      try {
-        await http.put(
-          Uri.parse('$baseUrl/update/${device['_id']}'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $authToken',
-          },
-          body: json.encode({'status': status}),
-        );
-      } catch (e) {
-        print('Error updating device ${device['deviceName']}: $e');
-      }
-    }
-  }
-
   void _showAutomationRuleDialog() {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(
-          builder: (context, setState) {
+          builder: (context, setDialogState) {
             return AlertDialog(
               title: const Text('Connected Devices'),
               content: SingleChildScrollView(
@@ -124,12 +126,11 @@ class _SmartWorkspaceScreenState extends State<SmartWorkspaceScreen> {
                       title: const Text('All Devices'),
                       subtitle: Text('Control all devices (${connectedDevices.length})'),
                       value: _isAutomationEnabled,
-                      onChanged: (bool value) {
-                        setState(() {
+                      onChanged: (bool value) async {
+                        setDialogState(() {
                           _isAutomationEnabled = value;
                         });
-                        _toggleAllDevices(value);
-                        this.setState(() {});
+                        await _toggleAllDevices(value);
                       },
                     ),
                     const Divider(),
@@ -142,11 +143,22 @@ class _SmartWorkspaceScreenState extends State<SmartWorkspaceScreen> {
                           await http.post(
                             Uri.parse(value ? webhookUrlOn : webhookUrlOff),
                           );
-                          setState(() {
+
+                          await http.put(
+                            Uri.parse('$baseUrl/update/${device['_id']}'),
+                            headers: {
+                              'Content-Type': 'application/json',
+                              'Authorization': 'Bearer $authToken',
+                            },
+                            body: json.encode({'status': value}),
+                          );
+
+                          setDialogState(() {
                             device['status'] = value;
+                            _isAutomationEnabled = connectedDevices.every((d) => d['status'] == true);
                           });
-                          await _updateDevicesStatus(value);
-                          this.setState(() {});
+
+                          await _loadDevices();
                         } catch (e) {
                           print('Error toggling device: $e');
                         }
@@ -235,9 +247,10 @@ class _SmartWorkspaceScreenState extends State<SmartWorkspaceScreen> {
                       ),
                       InkWell(
                         onTap: _showAutomationRuleDialog,
-                        child: const WorkspaceControlCard(
+                        child: WorkspaceControlCard(
                           title: 'Automation',
                           icon: Icons.auto_fix_high,
+                          isEnabled: _isAutomationEnabled,
                         ),
                       ),
                     ],

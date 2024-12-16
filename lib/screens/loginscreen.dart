@@ -45,7 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> navigateToHomeScreen(String email, String password) async {
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.0.3:8000/auth/login'),
+        Uri.parse('http://192.168.0.11:8000/auth/login'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
         },

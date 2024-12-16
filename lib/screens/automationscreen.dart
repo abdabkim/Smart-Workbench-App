@@ -14,7 +14,7 @@ class AutomationScreen extends StatefulWidget {
 }
 
 class _AutomationScreenState extends State<AutomationScreen> {
-  final String baseUrl = 'http://192.168.0.3:8000/device';
+  final String baseUrl = 'http://192.168.0.11:8000/device';
   List<AutomationSchedule> _schedules = [];
   List<dynamic> allDevices = [];
   bool isLoading = true;

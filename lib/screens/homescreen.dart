@@ -48,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       String token = prefs.getString('token') ?? '';
       final response = await http.get(
-        Uri.parse('http://192.168.0.3:8000/auth/getuser'),
+        Uri.parse('http://192.168.0.11:8000/auth/getuser'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'Authorization': 'Bearer $token'

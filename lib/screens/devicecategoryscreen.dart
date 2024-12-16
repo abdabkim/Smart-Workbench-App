@@ -15,7 +15,7 @@ class DeviceAreaInputScreen extends StatefulWidget {
 
 class _DeviceAreaInputScreenState extends State<DeviceAreaInputScreen> {
   final TextEditingController _areaController = TextEditingController();
-  final String baseUrl = 'http://192.168.0.6:8000/device';
+  final String baseUrl = 'http://192.168.0.11:8000/device';
   String? authToken;
 
   @override

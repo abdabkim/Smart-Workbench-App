@@ -37,7 +37,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // Then fetch the user profile including the image URL
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.0.3:8000/auth/getuser'),
+        Uri.parse('http://192.168.0.11:8000/auth/getuser'),
         headers: {
           'Authorization': 'Bearer $token',
         },
@@ -48,7 +48,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() {
           // Construct the full image URL
           if (userData['photo'] != null) {
-            profileImageUrl = 'http://192.168.0.3:8000/uploads/${userData['photo']}';
+            profileImageUrl = 'http://192.168.0.11:8000/uploads/${userData['photo']}';
           }
         });
       }
@@ -93,7 +93,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final token = prefs.getString('token');
 
         final response = await http.delete(
-          Uri.parse('http://192.168.0.3:8000/auth/delete'),
+          Uri.parse('http://192.168.0.11:8000/auth/delete'),
           headers: {
             'Authorization': 'Bearer $token',
             'Content-Type': 'application/json',
@@ -201,7 +201,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final token = prefs.getString('token');
 
     final response = await http.put(
-      Uri.parse('http://192.168.0.3:8000/auth/updatepassword'),
+      Uri.parse('http://192.168.0.11:8000/auth/updatepassword'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',

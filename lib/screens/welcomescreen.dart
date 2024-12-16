@@ -9,7 +9,7 @@ class WelcomeScreen extends StatelessWidget {
   Future<void> fetchData() async {
     // Replace with your actual API URL
     final response =
-    await http.get(Uri.parse('http://192.168.0.3:8000/auth/login'));
+    await http.get(Uri.parse('http://192.168.0.11:8000/auth/login'));
 
     if (response.statusCode == 200) {
       var data = jsonDecode(response.body);

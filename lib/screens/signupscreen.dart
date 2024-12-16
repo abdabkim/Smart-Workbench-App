@@ -26,9 +26,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final dio = Dio();
 
   Future<void> _getImage() async {
-    // final XFile? pickedFile = await _picker.pickImage(
-    //   source: ImageSource.gallery,
-    // );
 
     FilePickerResult? result = await FilePicker.platform.pickFiles();
 
@@ -39,11 +36,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     } else {
       print("No file selected");
     }
-//    if (pickedFile != null) {
-//      setState(() {
- //       _image = File(pickedFile.path);
- //     });
- //   }
   }
 
   Future<void> saveUserData(String name, String email, String profession) async {
@@ -87,8 +79,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
         'photo': await MultipartFile.fromFile(
           _image!.path,
           filename: fileName,
-          // You might need to specify the content type
-          contentType: MediaType('image', 'jpeg'), // Adjust based on your image type
+
+          contentType: MediaType('image', 'jpeg'),
         ),
       });
 
@@ -97,7 +89,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       print('File being sent: ${_image!.path}');
 
       final response = await dio.post(
-          "http://192.168.0.3:8000/auth/signup",
+          "http://192.168.0.11:8000/auth/signup",
           data: formData,
           options: Options(
             headers: {
