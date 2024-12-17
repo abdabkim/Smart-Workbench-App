@@ -59,11 +59,10 @@ class _LoginScreenState extends State<LoginScreen> {
       if (response.statusCode == 200) {
         print('Login successful: $data');
 
-        // Extract the user's name from the response, use email as fallback
         String userName = email.split('@')[0];
         String welcomeMessage = 'Welcome, $userName';
 
-        // Save login data to SharedPreferences
+        // Saves login data to SharedPreferences
         SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setString('email', email);
         String? token = data['id'] as String?;
@@ -75,8 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (!mounted) return;
         
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(data['message'])));
-        
-        
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(

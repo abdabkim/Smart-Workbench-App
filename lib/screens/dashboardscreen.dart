@@ -68,15 +68,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       try {
         await _speechToText.listen(
           onResult: _onSpeechResult,
-          listenFor: const Duration(seconds: 30),  // Increased listening time
-          pauseFor: const Duration(seconds: 5),    // Increased pause threshold
+          listenFor: const Duration(seconds: 30),
+          pauseFor: const Duration(seconds: 5),
           localeId: "en_US",
           cancelOnError: false,
           partialResults: true,
           onSoundLevelChange: (level) {
-            // Update UI based on sound level if needed
             setState(() {
-              // Add visual feedback that sound is being detected
               print('Sound level detected: $level');
             });
           },
@@ -84,7 +82,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
         setState(() {
           _isListening = true;
-          _lastWords = ''; // Clear previous results when starting new listening session
+          _lastWords = '';
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -108,7 +106,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         );
       }
     } else {
-      // Speech recognition is not enabled
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Speech recognition is not available. Please check permissions.'),

@@ -115,7 +115,6 @@ class WifiConnectScreen extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // Background Image
           Image.asset(
             'assets/bg.jpg',
             fit: BoxFit.cover,
@@ -125,7 +124,6 @@ class WifiConnectScreen extends StatelessWidget {
           SafeArea(
             child: Column(
               children: [
-                // Back Button and Title
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Row(
@@ -136,7 +134,7 @@ class WifiConnectScreen extends StatelessWidget {
                       ),
                       Expanded(
                         child: Text(
-                          'Check the Wi-Fi or bluetooth light',
+                          'Check Your Wi-Fi or Bluetooth light',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.w500,
@@ -161,8 +159,6 @@ class WifiConnectScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-
-                // Illustration Area
                 Expanded(
                   child: Center(
                     child: Column(

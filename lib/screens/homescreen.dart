@@ -22,8 +22,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-
-  // Updated _pages list with required parameters for ControlPanelScreen
   final List<Widget> _pages = <Widget>[
     const DashboardScreen(),
     const SmartWorkspaceScreen(),
@@ -155,7 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
               leading: const Icon(Icons.monitor_heart),
               title: const Text('Monitoring'),
               onTap: () {
-                _onItemTapped(3); // Changed from 2 to 3
+                _onItemTapped(3);
                 Navigator.pop(context);
               },
             ),
@@ -163,7 +161,7 @@ class _HomeScreenState extends State<HomeScreen> {
               leading: const Icon(Icons.schedule),
               title: const Text('Schedule'),
               onTap: () {
-                _onItemTapped(4); // Changed from 3 to 4
+                _onItemTapped(4);
                 Navigator.pop(context);
               },
             ),
@@ -171,7 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
               leading: const Icon(Icons.settings),
               title: const Text('Settings'),
               onTap: () {
-                _onItemTapped(5); // Changed from 4 to 5
+                _onItemTapped(5);
                 Navigator.pop(context);
               },
             ),

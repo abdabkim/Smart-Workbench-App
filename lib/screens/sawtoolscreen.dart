@@ -11,7 +11,7 @@ class SawToolScreen extends StatefulWidget {
 class _SawToolScreenState extends State<SawToolScreen> {
   final TextEditingController _toolNameController = TextEditingController();
 
-  // Predefined list of saw tools
+  // A Predefined list of saw tools
   final List<String> sawTools = [
     'Table Saw',
     'Miter Saw',
@@ -30,7 +30,6 @@ class _SawToolScreenState extends State<SawToolScreen> {
       ),
     );
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

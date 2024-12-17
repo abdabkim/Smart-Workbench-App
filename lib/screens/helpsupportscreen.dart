@@ -51,7 +51,6 @@ class HelpSupportScreen extends StatelessWidget {
                         Icons.question_answer,
                         'Find answers to commonly asked questions',
                             () {
-                          // Add navigation or action for FAQs
                         },
                       ),
                       const SizedBox(height: 8),
@@ -60,7 +59,6 @@ class HelpSupportScreen extends StatelessWidget {
                         Icons.email,
                         'Get in touch with our support team',
                             () {
-                          // Add navigation or action for contact support
                         },
                       ),
                       const SizedBox(height: 8),
@@ -69,7 +67,6 @@ class HelpSupportScreen extends StatelessWidget {
                         Icons.book,
                         'Learn how to use the app',
                             () {
-                          // Add navigation or action for user guide
                         },
                       ),
                     ],

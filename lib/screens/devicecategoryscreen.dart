@@ -32,7 +32,7 @@ class _DeviceAreaInputScreenState extends State<DeviceAreaInputScreen> {
     print('Auth Token Retrieved: ${authToken != null}');
   }
 
-  // Predefined areas list
+  // A Predefined areas list
   final List<String> predefinedAreas = [
     'Workshop',
     'Garage',
@@ -85,7 +85,6 @@ class _DeviceAreaInputScreenState extends State<DeviceAreaInputScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Device saved successfully')),
           );
-          // Navigate to status screen after successful save
           Navigator.push(
             context,
             MaterialPageRoute(

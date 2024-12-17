@@ -67,10 +67,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
       String password = passwordController.text;
       String profession = professionController.text.trim();
 
-      // Get the file name from the image path
       String fileName = _image!.path.split('/').last;
 
-      // Create FormData with proper file handling
       var formData = FormData.fromMap({
         'name': name,
         'email': email,
@@ -84,7 +82,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ),
       });
 
-      // For debugging - print out the form data
       print('Sending form data: ${formData.fields}');
       print('File being sent: ${_image!.path}');
 
@@ -94,16 +91,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
           options: Options(
             headers: {
               'Content-Type': 'multipart/form-data',
-              // Add any additional headers your backend might require
             },
-            // Add these to help with debugging
             validateStatus: (status) => true,
             followRedirects: false,
             receiveDataWhenStatusError: true,
           )
       );
-
-      // Debug response
       print('Response status: ${response.statusCode}');
       print('Response data: ${response.data}');
 

@@ -26,7 +26,6 @@ class SettingsCard extends StatelessWidget {
         trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white),
         onTap: onTap ??
                 () {
-              // Navigate to specific setting screen
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                     content: Text('$title settings page not implemented yet')),

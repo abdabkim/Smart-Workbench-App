@@ -92,8 +92,6 @@ class ControlPanelScreen extends StatefulWidget {
 class _ControlPanelScreenState extends State<ControlPanelScreen> {
   static const String powerRatingsKey = 'power_ratings';
   final String baseUrl = 'http://192.168.0.11:8000/device';
-
-  // State variables
   List<dynamic> devices = [];
   List<AutomationSchedule> _schedules = [];
   Map<String, List<PowerUsageData>> deviceUsageHistory = {};

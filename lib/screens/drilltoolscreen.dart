@@ -11,7 +11,7 @@ class DrillToolScreen extends StatefulWidget {
 class _DrillToolScreenState extends State<DrillToolScreen> {
   final TextEditingController _toolNameController = TextEditingController();
 
-  // Predefined list of drill tools
+  // A Predefined list of drill tools
   final List<String> drillTools = [
     'Electric drill',
     'Hammer Drill',

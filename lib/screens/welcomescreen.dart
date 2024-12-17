@@ -5,16 +5,16 @@ import 'dart:convert';
 import 'package:smart_workbench_app/screens/signupscreen.dart';
 
 class WelcomeScreen extends StatelessWidget {
-  // Function to make an API call
+
   Future<void> fetchData() async {
-    // Replace with your actual API URL
+
     final response =
     await http.get(Uri.parse('http://192.168.0.11:8000/auth/login'));
 
     if (response.statusCode == 200) {
       var data = jsonDecode(response.body);
       print('Data received: $data');
-      // Handle the data here
+
     } else {
       throw Exception('Failed to load data');
     }
@@ -29,7 +29,7 @@ class WelcomeScreen extends StatelessWidget {
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
-                image: AssetImage('assets/bg.jpg'), // Replace with actual path
+                image: AssetImage('assets/bg.jpg'),
                 fit: BoxFit.cover,
               ),
             ),
@@ -41,14 +41,14 @@ class WelcomeScreen extends StatelessWidget {
               children: [
                 // App logo
                 Image.asset('assets/logo.png',
-                    height: 100), // Replace with your app's logo
+                    height: 100),
 
                 const SizedBox(height: 20),
 
                 // Welcome text
                 const Text(
                   'Welcome Home to Smart Workbench',
-                  textAlign: TextAlign.center,  // Add this line
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
@@ -92,8 +92,6 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // Fetch Data Button (This will trigger the API call)
                 SizedBox(
                   width: 250,
                   child: ElevatedButton(
@@ -110,7 +108,7 @@ class WelcomeScreen extends StatelessWidget {
                         MaterialPageRoute(
                             builder: (context) => const LoginScreen()),
                       );
-                    }, // This triggers the API call
+                    },
                     child: const Text(
                       'Login',
                       style: TextStyle(color: Colors.white),

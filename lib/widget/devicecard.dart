@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 
-
-
-
 class DeviceCard extends StatelessWidget {
   final String title;
   final IconData icon;

@@ -5,7 +5,6 @@ import 'dart:async';
 import 'package:smart_workbench_app/models/automation_schedule.dart';
 import 'package:http/http.dart' as http;
 
-// First Widget: AutomationScreen
 class AutomationScreen extends StatefulWidget {
   const AutomationScreen({Key? key}) : super(key: key);
 
@@ -25,7 +24,6 @@ class _AutomationScreenState extends State<AutomationScreen> {
   void initState() {
     super.initState();
     _loadInitialData();
-    // Set up periodic device refresh
     _deviceRefreshTimer = Timer.periodic(
       const Duration(seconds: 5),
           (_) => _refreshDevices(),
@@ -53,8 +51,6 @@ class _AutomationScreenState extends State<AutomationScreen> {
         }
         return;
       }
-
-      // Load devices and schedules
       await Future.wait([
         _refreshDevices(),
         _loadSchedules(),
@@ -396,9 +392,6 @@ class _AutomationScreenState extends State<AutomationScreen> {
     );
   }
 }
-
-
-// Second Widget: Schedule Dialog
 class _ScheduleDialog extends StatefulWidget {
   final List<String> devices;
   final AutomationSchedule? schedule;

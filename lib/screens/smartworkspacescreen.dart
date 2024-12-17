@@ -89,8 +89,6 @@ class _SmartWorkspaceScreenState extends State<SmartWorkspaceScreen> {
         _isAutomationEnabled = turnOn;
       });
     }
-
-    // Refresh devices
     await _loadDevices();
   }
 

@@ -11,7 +11,7 @@ class OtherToolScreen extends StatefulWidget {
 class _OtherToolScreenState extends State<OtherToolScreen> {
   final TextEditingController _toolNameController = TextEditingController();
 
-  // Predefined list of other common workshop tools
+  // A Predefined list of other common workshop tools
   final List<String> otherTools = [
     'Hammer',
     'Screwdriver',
